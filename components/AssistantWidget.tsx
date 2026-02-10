@@ -3,27 +3,57 @@
 import { useState } from "react";
 import Link from "next/link";
 
+type ChatMessage = { role: "user" | "ai"; text: string };
+
+async function sendToAssistantAPI(message: string, history: ChatMessage[]) {
+  const res = await fetch("/api/assistant", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message,
+      // convert widget history shape -> API history shape
+      history: history.map((m) => ({
+        role: m.role === "ai" ? "assistant" : "user",
+        content: m.text,
+      })),
+    }),
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || "Assistant request failed");
+
+  return data as { text: string };
+}
+
 export default function AssistantWidget() {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Array<{ role: "user" | "ai"; text: string }>>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function send() {
-    if (!input.trim()) return;
+  async function send() {
+    if (!input.trim() || isLoading) return;
 
     const userText = input.trim();
-    setMessages((m) => [...m, { role: "user", text: userText }]);
-    setInput("");
+    const nextMessages: ChatMessage[] = [...messages, { role: "user", text: userText }];
 
-    // Placeholder “AI” response for now (we’ll replace with real API later)
-    window.setTimeout(() => {
+    setMessages(nextMessages);
+    setInput("");
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const { text } = await sendToAssistantAPI(userText, nextMessages);
+      setMessages((m) => [...m, { role: "ai", text }]);
+    } catch (e: any) {
+      setError(e?.message || "Something went wrong");
       setMessages((m) => [
         ...m,
-        {
-          role: "ai",
-          text: `Got it. I’ll help you study: "${userText}". (AI integration coming next.)`,
-        },
+        { role: "ai", text: "Sorry, something went wrong talking to the assistant." },
       ]);
-    }, 350);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -74,6 +104,14 @@ export default function AssistantWidget() {
             </div>
           ))
         )}
+
+        {isLoading && (
+          <div style={{ opacity: 0.7, marginTop: "0.5rem" }}>
+            <b>AI:</b> Thinking…
+          </div>
+        )}
+
+        {error && <div style={{ color: "crimson", marginTop: "0.5rem" }}>{error}</div>}
       </div>
 
       <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem" }}>
@@ -90,12 +128,14 @@ export default function AssistantWidget() {
             borderRadius: 10,
             border: "1px solid rgba(255,255,255,0.18)",
           }}
+          disabled={isLoading}
         />
         <button
           onClick={send}
+          disabled={isLoading || !input.trim()}
           style={{ padding: "0.6rem 0.9rem", borderRadius: 10, cursor: "pointer" }}
         >
-          Send
+          {isLoading ? "Thinking…" : "Send"}
         </button>
       </div>
     </section>
