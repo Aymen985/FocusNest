@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 const linkStyle: React.CSSProperties = {
-  padding: "0.5rem 0.75rem",
+  padding: "0.5rem 0.9rem",
   borderRadius: "0.5rem",
   textDecoration: "none",
 };
@@ -11,7 +11,9 @@ export default function Navbar() {
     <nav
       style={{
         display: "flex",
-        gap: "0.75rem",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: "2rem",
         padding: "1rem 2rem",
         borderBottom: "1px solid rgba(0,0,0,0.1)",
       }}

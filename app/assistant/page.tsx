@@ -1,8 +1,9 @@
+import AssistantWidget from "../../components/AssistantWidget";
+
 export default function AssistantPage() {
   return (
-    <main style={{ padding: "2rem" }}>
-      <h1>AI Study Assistant</h1>
-      <p>This page will contain the AI chat interface.</p>
+    <main style={{ padding: "2rem", maxWidth: 1400, margin: "0 auto" }}>
+      <AssistantWidget />
     </main>
   );
 }
