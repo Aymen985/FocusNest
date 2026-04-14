@@ -1,47 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import LoadingScreen from "@/components/LoadingScreen";
 
-
 export default function LoginPage() {
-  const { login, user, loading: authLoading } = useAuth(); // renamed to authLoading
+  const { login, user, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false); // this one stays as loading
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  
+  // Flag to block redirect when we intentionally signed out unverified user
+  const blockedRef = useRef(false);
 
-  // Auth guards — must come after all hooks
+  useEffect(() => {
+    if (!authLoading && user && !blockedRef.current) {
+      router.push("/");
+    }
+  }, [user, authLoading, router]);
+
   if (authLoading) return <LoadingScreen />;
-  if (user) {
-    router.push("/dashboard");
-    return null;
-  }
+  if (user && !blockedRef.current) return null;
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
     setInfo("");
+    blockedRef.current = false;
 
     try {
       const loggedInUser = await login(email, password);
 
       if (!loggedInUser.emailVerified) {
+        blockedRef.current = true; // block the useEffect redirect
         await signOut(auth);
         setError("Your email is not verified. Please check your inbox and verify your email before logging in.");
         setLoading(false);
         return;
       }
 
-      router.push("/profile");
+      router.push("/");
     } catch (error: any) {
       if (error.code === "auth/invalid-credential") {
         setError("Invalid email or password.");

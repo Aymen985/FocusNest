@@ -1,13 +1,19 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import LoadingScreen from "@/components/LoadingScreen";
 
 export default function ProfilePage() {
   const { user, userProfile, logout, loading } = useAuth();
+  const router = useRouter();
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <LoadingScreen />;
 
-  if (!user) return <p>You are not logged in.</p>;
+  if (!user) {
+    router.push("/login");
+    return null;
+  }
 
   return (
     <div style={{ padding: "2rem" }}>

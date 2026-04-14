@@ -35,7 +35,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div style={{ padding: "2rem", maxWidth: "400px", margin: "0 auto" }}>
+    <div>
       <h1 style={{ fontSize: "24px", marginBottom: "20px" }}>Reset Password</h1>
 
       <form onSubmit={handleResetPassword}>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import LoadingScreen from "@/components/LoadingScreen";
+import { useState, useEffect } from "react";
 
 export default function SignupPage() {
   const { signup, user, loading: authLoading } = useAuth(); // added user + authLoading
@@ -17,11 +18,14 @@ export default function SignupPage() {
   const [success, setSuccess] = useState("");
 
   // Auth guards — after all hooks, before everything else
-  if (authLoading) return <LoadingScreen />;
-  if (user) {
-    router.push("/");
-    return null;
-  }
+    useEffect(() => {
+    if (!authLoading && user) {
+        router.push("/");
+    }
+    }, [user, authLoading, router]);
+
+    if (authLoading) return <LoadingScreen />;
+    if (user) return null;
 
   function validatePassword(password: string) {
     if (password.length < 6) {
