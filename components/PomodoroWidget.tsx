@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { updateUserStats } from "@/lib/userProfile";
 
 type Phase = "focus" | "break";
 
@@ -26,6 +28,8 @@ function getTodayKey() {
 }
 
 export default function PomodoroWidget() {
+  const { user } = useAuth();
+
   const [focusMins, setFocusMins] = useState<number>(25);
   const [breakMins, setBreakMins] = useState<number>(5);
 
@@ -41,8 +45,7 @@ export default function PomodoroWidget() {
     if (isRunning) return;
     if (phase === "focus") setSecondsLeft(clampInt(focusMins, 1, 180) * 60);
     if (phase === "break") setSecondsLeft(clampInt(breakMins, 1, 60) * 60);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusMins, breakMins]);
+  }, [focusMins, breakMins, phase, isRunning]);
 
   useEffect(() => {
     if (!isRunning) {
@@ -52,6 +55,7 @@ export default function PomodoroWidget() {
       }
       return;
     }
+
     if (intervalRef.current !== null) return;
 
     intervalRef.current = window.setInterval(() => {
@@ -69,24 +73,27 @@ export default function PomodoroWidget() {
   useEffect(() => {
     if (secondsLeft > 0) return;
 
-    setIsRunning(false);
+    async function handlePhaseComplete() {
+      setIsRunning(false);
 
-    if (phase === "focus") {
-      incrementProgress();
-      const bm = clampInt(breakMins, 1, 60);
-      setPhase("break");
-      setSecondsLeft(bm * 60);
-      setIsRunning(true);
-    } else {
-      const fm = clampInt(focusMins, 1, 180);
-      setPhase("focus");
-      setSecondsLeft(fm * 60);
-      setIsRunning(true);
+      if (phase === "focus") {
+        await incrementProgress();
+        const bm = clampInt(breakMins, 1, 60);
+        setPhase("break");
+        setSecondsLeft(bm * 60);
+        setIsRunning(true);
+      } else {
+        const fm = clampInt(focusMins, 1, 180);
+        setPhase("focus");
+        setSecondsLeft(fm * 60);
+        setIsRunning(true);
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [secondsLeft]);
 
-  function incrementProgress() {
+    handlePhaseComplete();
+  }, [secondsLeft, phase, breakMins, focusMins]);
+
+  async function incrementProgress() {
     try {
       const currentTotal = Number(localStorage.getItem(STORAGE_KEY_TOTAL) ?? "0");
       localStorage.setItem(STORAGE_KEY_TOTAL, String(currentTotal + 1));
@@ -97,9 +104,16 @@ export default function PomodoroWidget() {
         localStorage.setItem(STORAGE_KEY_DATE, today);
         localStorage.setItem(STORAGE_KEY_TODAY, "0");
       }
+
       const currentToday = Number(localStorage.getItem(STORAGE_KEY_TODAY) ?? "0");
       localStorage.setItem(STORAGE_KEY_TODAY, String(currentToday + 1));
-    } catch {}
+
+      if (user) {
+        await updateUserStats(user.uid);
+      }
+    } catch (error) {
+      console.error("Failed to update progress:", error);
+    }
   }
 
   return (
@@ -170,6 +184,7 @@ export default function PomodoroWidget() {
             style={{ width: 90, padding: "0.35rem", borderRadius: 8 }}
           />
         </label>
+
         <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
           <span style={{ fontSize: "0.85rem", opacity: 0.8 }}>Break</span>
           <input

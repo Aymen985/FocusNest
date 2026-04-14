@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 
 const linkStyle: React.CSSProperties = {
   padding: "0.5rem 0.9rem",
@@ -7,6 +10,8 @@ const linkStyle: React.CSSProperties = {
 };
 
 export default function Navbar() {
+  const { user, logout, loading } = useAuth();
+
   return (
     <nav
       style={{
@@ -30,6 +35,47 @@ export default function Navbar() {
       <Link href="/assistant" style={linkStyle}>
         Assistant
       </Link>
+
+      {/* Auth links — only render once auth state is known */}
+      {!loading && (
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginLeft: "auto" }}>
+          {user ? (
+            <>
+              <Link href="/profile" style={linkStyle}>
+                Profile
+              </Link>
+              <button
+                onClick={logout}
+                style={{
+                  ...linkStyle,
+                  background: "none",
+                  border: "1px solid rgba(255,255,255,0.3)",
+                  cursor: "pointer",
+                  fontSize: "1rem",
+                }}
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" style={linkStyle}>
+                Login
+              </Link>
+              <Link
+                href="/signup"
+                style={{
+                  ...linkStyle,
+                  background: "#6c63ff",
+                  color: "#fff",
+                }}
+              >
+                Sign up
+              </Link>
+            </>
+          )}
+        </div>
+      )}
     </nav>
   );
 }
