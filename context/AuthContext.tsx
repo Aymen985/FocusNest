@@ -22,7 +22,11 @@ import { createUserProfile, getUserProfile } from "@/lib/userProfile";
 type UserProfile = {
   uid: string;
   email: string;
-  name: string;
+  firstName: string;
+  lastName: string;
+  dob: string;
+  major: string;
+  phone: string;
   avatar: string;
   treeCount: number;
   totalSessions: number;
@@ -32,7 +36,17 @@ type AuthContextType = {
   user: User | null;
   userProfile: UserProfile;
   loading: boolean;
-  signup: (email: string, password: string) => Promise<void>;
+  signup: (
+    email: string,
+    password: string,
+    extra: {
+      firstName: string;
+      lastName: string;
+      dob: string;
+      major: string;
+      phone: string;
+    }
+  ) => Promise<void>;
   login: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -45,14 +59,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile>(null);
   const [loading, setLoading] = useState(true);
 
-  // Single source of truth for auth state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       setUser(u);
 
       if (u) {
         document.cookie = "auth-token=true; path=/; max-age=86400";
-        // Load profile whenever auth state resolves to a logged-in user
         const profile = await getUserProfile(u.uid);
         setUserProfile(profile as UserProfile);
       } else {
@@ -60,28 +72,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUserProfile(null);
       }
 
-      setLoading(false); // only set false after profile is loaded too
+      setLoading(false);
     });
     return unsubscribe;
   }, []);
 
-  async function signup(email: string, password: string): Promise<void> {
+  async function signup(
+    email: string,
+    password: string,
+    extra: {
+      firstName: string;
+      lastName: string;
+      dob: string;
+      major: string;
+      phone: string;
+    }
+  ): Promise<void> {
     const result = await createUserWithEmailAndPassword(auth, email, password);
-    await createUserProfile(result.user.uid, result.user.email || email);
+    await createUserProfile(result.user.uid, result.user.email || email, extra);
     await sendEmailVerification(result.user);
-    // Do NOT set user/userProfile here — onAuthStateChanged handles it
-    await signOut(auth); // sign out immediately so they must verify email first
+    await signOut(auth);
   }
 
   async function login(email: string, password: string): Promise<User> {
     const result = await signInWithEmailAndPassword(auth, email, password);
-    // Do NOT set user/userProfile here — onAuthStateChanged handles it
     return result.user;
   }
 
   async function logout(): Promise<void> {
     await signOut(auth);
-    // Do NOT set user/userProfile here — onAuthStateChanged handles it
   }
 
   async function resetPassword(email: string): Promise<void> {
