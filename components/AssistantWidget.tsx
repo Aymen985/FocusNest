@@ -28,7 +28,11 @@ async function uploadFile(file: File) {
   return data as { docId: string; chunks: number };
 }
 
-async function sendToAssistantAPI(message: string, history: ChatMessage[]) {
+async function sendToAssistantAPI(
+  message: string,
+  history: ChatMessage[],
+  onChunk: (text: string) => void
+) {
   const token = await getToken();
 
   const res = await fetch("/api/assistant", {
@@ -46,9 +50,17 @@ async function sendToAssistantAPI(message: string, history: ChatMessage[]) {
     }),
   });
 
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data?.error || "Assistant request failed");
-  return data as { text: string };
+  if (!res.ok) throw new Error("Assistant request failed");
+
+  const reader = res.body?.getReader();
+  const decoder = new TextDecoder();
+  if (!reader) throw new Error("No response body");
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    onChunk(decoder.decode(value, { stream: true }));
+  }
 }
 
 export default function AssistantWidget() {
@@ -73,15 +85,29 @@ export default function AssistantWidget() {
     setError(null);
     setIsLoading(true);
 
+    setMessages((m) => [...m, { role: "ai", text: "" }]);
+
     try {
-      const { text } = await sendToAssistantAPI(userText, nextMessages);
-      setMessages((m) => [...m, { role: "ai", text }]);
+      await sendToAssistantAPI(userText, nextMessages, (chunk) => {
+        setMessages((m) => {
+          const updated = [...m];
+          updated[updated.length - 1] = {
+            role: "ai",
+            text: updated[updated.length - 1].text + chunk,
+          };
+          return updated;
+        });
+      });
     } catch {
+      setMessages((m) => {
+        const updated = [...m];
+        updated[updated.length - 1] = {
+          role: "ai",
+          text: "AI unavailable. Please try again shortly.",
+        };
+        return updated;
+      });
       setError("AI unavailable. Please try again shortly.");
-      setMessages((m) => [
-        ...m,
-        { role: "ai", text: "AI unavailable. Please try again shortly." },
-      ]);
     } finally {
       setIsLoading(false);
     }
@@ -106,7 +132,6 @@ export default function AssistantWidget() {
       setUploadStatus(`✗ Upload failed: ${err instanceof Error ? err.message : "unknown error"}`);
     }
 
-    // Reset input so the same file can be re-uploaded if needed
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -121,12 +146,17 @@ export default function AssistantWidget() {
         flexDirection: "column",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
-        <h2 style={{ margin: 0 }}>AI Study Assistant</h2>
+    <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
+      <h2 style={{ margin: 0 }}>AI Study Assistant</h2>
+      <div style={{ display: "flex", gap: "1rem" }}>
+        <Link href="/documents" style={{ opacity: 0.8, fontSize: "0.9rem" }}>
+          My docs →
+        </Link>
         <Link href="/assistant" style={{ opacity: 0.8, fontSize: "0.9rem" }}>
           Full view →
         </Link>
       </div>
+    </div>
 
       {/* Upload */}
       <div style={{ marginTop: "0.75rem" }}>
@@ -189,15 +219,14 @@ export default function AssistantWidget() {
               <b style={{ opacity: 0.85 }}>
                 {m.role === "user" ? "You" : "AI"}:
               </b>{" "}
-              <span style={{ opacity: 0.9 }}>{m.text}</span>
+              <span style={{ opacity: 0.9 }}>
+                {m.text}
+                {m.role === "ai" && isLoading && i === messages.length - 1 && (
+                  <span style={{ opacity: 0.5 }}>▋</span>
+                )}
+              </span>
             </div>
           ))
-        )}
-
-        {isLoading && (
-          <div style={{ opacity: 0.7, marginTop: "0.5rem" }}>
-            <b>AI:</b> Thinking…
-          </div>
         )}
 
         {error && (
@@ -209,19 +238,29 @@ export default function AssistantWidget() {
 
       {/* Input */}
       <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem" }}>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") send(); }}
-          placeholder="Type your question…"
-          style={{
-            flex: 1,
-            padding: "0.6rem 0.75rem",
-            borderRadius: 10,
-            border: "1px solid rgba(255,255,255,0.18)",
-          }}
-          disabled={isLoading}
-        />
+              <textarea
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            send();
+          }
+        }}
+        placeholder="Type your question… (Shift+Enter for new line)"
+        rows={2}
+        style={{
+          flex: 1,
+          padding: "0.6rem 0.75rem",
+          borderRadius: 10,
+          border: "1px solid rgba(255,255,255,0.18)",
+          resize: "none",
+          fontFamily: "inherit",
+          fontSize: "inherit",
+          lineHeight: "1.5",
+        }}
+        disabled={isLoading}
+      />
         <button
           onClick={send}
           disabled={isLoading || !input.trim()}
