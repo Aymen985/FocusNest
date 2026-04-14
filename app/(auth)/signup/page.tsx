@@ -19,7 +19,7 @@ export default function SignupPage() {
   // Auth guards — after all hooks, before everything else
   if (authLoading) return <LoadingScreen />;
   if (user) {
-    router.push("/dashboard");
+    router.push("/");
     return null;
   }
 
