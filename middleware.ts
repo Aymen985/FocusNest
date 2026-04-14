@@ -12,7 +12,7 @@ export function middleware(req: NextRequest) {
 
   // Auth routes — must be logged out
   if ((pathname.startsWith("/login") || pathname.startsWith("/signup")) && token) {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
   return NextResponse.next();
