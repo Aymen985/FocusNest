@@ -1,14 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
+import { auth } from "@/lib/firebase";
 
 type ChatMessage = { role: "user" | "ai"; text: string };
 
+async function getToken() {
+  return auth.currentUser?.getIdToken() ?? null;
+}
+
+async function uploadFile(file: File) {
+  const token = await getToken();
+  if (!token) throw new Error("Not logged in");
+
+  const form = new FormData();
+  form.append("file", file);
+
+  const res = await fetch("/api/upload", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error || "Upload failed");
+  return data as { docId: string; chunks: number };
+}
+
 async function sendToAssistantAPI(message: string, history: ChatMessage[]) {
+  const token = await getToken();
+
   const res = await fetch("/api/assistant", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify({
       message,
       history: history.map((m) => ({
@@ -20,7 +48,6 @@ async function sendToAssistantAPI(message: string, history: ChatMessage[]) {
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data?.error || "Assistant request failed");
-
   return data as { text: string };
 }
 
@@ -29,7 +56,8 @@ export default function AssistantWidget() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [uploadedFile, setUploadedFile] = useState<string | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function send() {
     if (!input.trim() || isLoading) return;
@@ -59,11 +87,27 @@ export default function AssistantWidget() {
     }
   }
 
-  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploadedFile(file.name);
+    setUploadStatus(`Uploading ${file.name}…`);
+    try {
+      const { chunks } = await uploadFile(file);
+      setUploadStatus(`✓ ${file.name} — ${chunks} chunks indexed`);
+      setMessages((m) => [
+        ...m,
+        {
+          role: "ai",
+          text: `I've indexed "${file.name}" (${chunks} chunks). Ask me anything about it!`,
+        },
+      ]);
+    } catch (err) {
+      setUploadStatus(`✗ Upload failed: ${err instanceof Error ? err.message : "unknown error"}`);
+    }
+
+    // Reset input so the same file can be re-uploaded if needed
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   return (
@@ -84,7 +128,7 @@ export default function AssistantWidget() {
         </Link>
       </div>
 
-      {/* Upload Button (Demo Only) */}
+      {/* Upload */}
       <div style={{ marginTop: "0.75rem" }}>
         <label
           style={{
@@ -98,19 +142,22 @@ export default function AssistantWidget() {
         >
           Upload Lecture / Exercise
           <input
+            ref={fileInputRef}
             type="file"
+            accept=".pdf,.docx,.txt"
             style={{ display: "none" }}
             onChange={handleFileUpload}
           />
         </label>
 
-        {uploadedFile && (
+        {uploadStatus && (
           <div style={{ marginTop: "0.4rem", fontSize: "0.8rem", opacity: 0.8 }}>
-            Uploaded (demo): {uploadedFile}
+            {uploadStatus}
           </div>
         )}
       </div>
 
+      {/* Messages */}
       <div
         style={{
           marginTop: "1rem",
@@ -123,7 +170,7 @@ export default function AssistantWidget() {
       >
         {messages.length === 0 ? (
           <div style={{ opacity: 0.75 }}>
-            Ask a question like: “Explain recursion like I’m 5” or “Make me a study plan for OS”.
+            Ask a question like: "Explain recursion like I'm 5" or "Make me a study plan for OS".
           </div>
         ) : (
           messages.map((m, i) => (
@@ -160,13 +207,12 @@ export default function AssistantWidget() {
         )}
       </div>
 
+      {/* Input */}
       <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem" }}>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") send();
-          }}
+          onKeyDown={(e) => { if (e.key === "Enter") send(); }}
           placeholder="Type your question…"
           style={{
             flex: 1,
@@ -179,11 +225,7 @@ export default function AssistantWidget() {
         <button
           onClick={send}
           disabled={isLoading || !input.trim()}
-          style={{
-            padding: "0.6rem 0.9rem",
-            borderRadius: 10,
-            cursor: "pointer",
-          }}
+          style={{ padding: "0.6rem 0.9rem", borderRadius: 10, cursor: "pointer" }}
         >
           {isLoading ? "Thinking…" : "Send"}
         </button>
