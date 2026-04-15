@@ -1,5 +1,5 @@
 "use client";
-
+import { Suspense } from "react";
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -284,7 +284,7 @@ function ProgressRing({ progress, phase }: { progress: number; phase: Phase }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function PomodoroPage() {
+function PomodoroInner() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
 
@@ -487,5 +487,12 @@ export default function PomodoroPage() {
         .animate-fade-in { animation: fade-in 0.4s ease-out; }
       `}</style>
     </div>
+  );
+}
+export default function PomodoroPage() {
+  return (
+    <Suspense fallback={null}>
+      <PomodoroInner />
+    </Suspense>
   );
 }
