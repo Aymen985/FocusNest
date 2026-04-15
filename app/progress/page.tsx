@@ -1,245 +1,286 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { db } from "@/lib/firebase";
+import {
+  collection,
+  query,
+  orderBy,
+  limit,
+  getDocs,
+  Timestamp,
+} from "firebase/firestore";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  LineChart,
+  Line,
+} from "recharts";
 
-const STORAGE_KEY_TOTAL = "focusnest_total_sessions";
-const STORAGE_KEY_TODAY = "focusnest_today_sessions";
-const STORAGE_KEY_DATE = "focusnest_today_date";
-
-function getTodayKey() {
-  return new Date().toISOString().slice(0, 10);
+interface PomodoroSession {
+  id: string;
+  completedAt: Timestamp;
+  duration: number;
+  label?: string;
 }
 
-function safeNumber(value: string | null) {
-  const n = Number(value ?? "0");
-  return Number.isFinite(n) ? n : 0;
+interface DayStat {
+  date: string;
+  sessions: number;
+  minutes: number;
 }
 
-// Growth frames for the newest completed cycle
-const GROWTH_FRAMES = ["🌱", "🌿", "🌳"] as const;
+function getStreakInfo(sessions: PomodoroSession[]): {
+  current: number;
+  longest: number;
+} {
+  if (!sessions.length) return { current: 0, longest: 0 };
+
+  const daySet = new Set<string>();
+  sessions.forEach((s) => {
+    const d = s.completedAt.toDate();
+    daySet.add(d.toISOString().split("T")[0]);
+  });
+
+  const sortedDays = Array.from(daySet).sort();
+
+  let longest = 1;
+  let tempStreak = 1;
+
+  for (let i = 1; i < sortedDays.length; i++) {
+    const prev = new Date(sortedDays[i - 1]);
+    const curr = new Date(sortedDays[i]);
+    const diff = (curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
+    if (diff === 1) {
+      tempStreak++;
+      if (tempStreak > longest) longest = tempStreak;
+    } else {
+      tempStreak = 1;
+    }
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+  let streak = 0;
+  const checkDay = new Date(today);
+  while (true) {
+    const key = checkDay.toISOString().split("T")[0];
+    if (daySet.has(key)) {
+      streak++;
+      checkDay.setDate(checkDay.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+
+  return { current: streak, longest };
+}
+
+function getLast14Days(sessions: PomodoroSession[]): DayStat[] {
+  const map: Record<string, DayStat> = {};
+  const today = new Date();
+
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split("T")[0];
+    const label = d.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+    });
+    map[key] = { date: label, sessions: 0, minutes: 0 };
+  }
+
+  sessions.forEach((s) => {
+    const key = s.completedAt.toDate().toISOString().split("T")[0];
+    if (map[key]) {
+      map[key].sessions++;
+      map[key].minutes += s.duration ?? 25;
+    }
+  });
+
+  return Object.values(map);
+}
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl px-4 py-3 text-sm shadow-lg">
+        <p className="font-semibold text-neutral-800 dark:text-neutral-100 mb-1">
+          {label}
+        </p>
+        {payload.map((p: any) => (
+          <p key={p.name} style={{ color: p.color }}>
+            {p.name}: <span className="font-medium">{p.value}</span>
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
 
 export default function ProgressPage() {
-  const [totalSessions, setTotalSessions] = useState(0);
-  const [todaySessions, setTodaySessions] = useState(0);
-
-  // For animating the newest tree
-  const [animIndex, setAnimIndex] = useState<number | null>(null);
-  const [animFrame, setAnimFrame] = useState<number>(GROWTH_FRAMES.length - 1); // default to tree
-  const prevTotalRef = useRef<number>(0);
-  const timersRef = useRef<number[]>([]);
-
-  function clearTimers() {
-    timersRef.current.forEach((t) => window.clearTimeout(t));
-    timersRef.current = [];
-  }
-
-  function triggerNewTreeAnimation(newTotal: number) {
-    // New tree is last item: index newTotal - 1
-    clearTimers();
-    setAnimIndex(newTotal - 1);
-    setAnimFrame(0);
-
-    // Progress through growth frames quickly
-    const t1 = window.setTimeout(() => setAnimFrame(1), 350);
-    const t2 = window.setTimeout(() => setAnimFrame(2), 750);
-    const t3 = window.setTimeout(() => {
-      // End animation
-      setAnimIndex(null);
-      setAnimFrame(2);
-    }, 950);
-
-    timersRef.current.push(t1, t2, t3);
-  }
+  const { user } = useAuth();
+  const [sessions, setSessions] = useState<PomodoroSession[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      // Reset "today" counter if date changed
-      const today = getTodayKey();
-      const savedDate = localStorage.getItem(STORAGE_KEY_DATE);
-      if (savedDate !== today) {
-        localStorage.setItem(STORAGE_KEY_DATE, today);
-        localStorage.setItem(STORAGE_KEY_TODAY, "0");
+    if (!user) return;
+    (async () => {
+      try {
+        const q = query(
+          collection(db, "users", user.uid, "pomodoroSessions"),
+          orderBy("completedAt", "desc"),
+          limit(200)
+        );
+        const snap = await getDocs(q);
+        const data: PomodoroSession[] = snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<PomodoroSession, "id">),
+        }));
+        setSessions(data);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
       }
+    })();
+  }, [user]);
 
-      const initialTotal = safeNumber(localStorage.getItem(STORAGE_KEY_TOTAL));
-      const initialToday = safeNumber(localStorage.getItem(STORAGE_KEY_TODAY));
-      setTotalSessions(initialTotal);
-      setTodaySessions(initialToday);
-      prevTotalRef.current = initialTotal;
+  const totalSessions = sessions.length;
+  const totalMinutes = sessions.reduce((a, s) => a + (s.duration ?? 25), 0);
+  const totalHours = (totalMinutes / 60).toFixed(1);
+  const { current: currentStreak, longest: longestStreak } =
+    getStreakInfo(sessions);
+  const chartData = getLast14Days(sessions);
+  const avgDaily = (
+    chartData.reduce((a, d) => a + d.sessions, 0) / 14
+  ).toFixed(1);
 
-      const syncFromStorage = () => {
-        const nextTotal = safeNumber(localStorage.getItem(STORAGE_KEY_TOTAL));
-        const nextToday = safeNumber(localStorage.getItem(STORAGE_KEY_TODAY));
-
-        // If a focus cycle completed, total increments by 1: animate the new tree
-        if (nextTotal > prevTotalRef.current) {
-          triggerNewTreeAnimation(nextTotal);
-        }
-        prevTotalRef.current = nextTotal;
-
-        setTotalSessions(nextTotal);
-        setTodaySessions(nextToday);
-      };
-
-      // Update when storage changes (other tabs)
-      const onStorage = () => syncFromStorage();
-      window.addEventListener("storage", onStorage);
-
-      // Also poll so it updates when Pomodoro runs in the same tab
-      const interval = window.setInterval(syncFromStorage, 1000);
-
-      return () => {
-        window.removeEventListener("storage", onStorage);
-        window.clearInterval(interval);
-        clearTimers();
-      };
-    } catch {
-      setTotalSessions(0);
-      setTodaySessions(0);
-    }
-  }, []);
-
-  // Build the forest: one tree per completed focus session
-  // To keep rendering fast, show up to 120 icons and collapse the rest.
-  const MAX_VISIBLE = 120;
-
-  const { visibleCount, hiddenCount } = useMemo(() => {
-    const visible = Math.min(totalSessions, MAX_VISIBLE);
-    const hidden = Math.max(0, totalSessions - MAX_VISIBLE);
-    return { visibleCount: visible, hiddenCount: hidden };
-  }, [totalSessions]);
-
-  const forestCells = useMemo(() => {
-    const cells: string[] = [];
-    for (let i = 0; i < visibleCount; i++) {
-      // If this is the newest one and animation is active, show growth frames
-      if (animIndex !== null && i === animIndex) {
-        cells.push(GROWTH_FRAMES[animFrame]);
-      } else {
-        // Completed cycles are full trees
-        cells.push("🌳");
-      }
-    }
-    return cells;
-  }, [visibleCount, animIndex, animFrame]);
-
-  function handleResetProgress() {
-    if (!confirm("Reset forest? This clears total and today counters.")) return;
-    try {
-      localStorage.setItem(STORAGE_KEY_TOTAL, "0");
-      localStorage.setItem(STORAGE_KEY_TODAY, "0");
-      localStorage.setItem(STORAGE_KEY_DATE, getTodayKey());
-    } catch {}
-    clearTimers();
-    prevTotalRef.current = 0;
-    setAnimIndex(null);
-    setAnimFrame(GROWTH_FRAMES.length - 1);
-    setTotalSessions(0);
-    setTodaySessions(0);
-  }
+  const stats = [
+    { label: "Total sessions", value: totalSessions.toString() },
+    { label: "Total hours studied", value: `${totalHours}h` },
+    { label: "Current streak", value: `${currentStreak}d` },
+    { label: "Longest streak", value: `${longestStreak}d` },
+    { label: "Avg sessions / day", value: avgDaily },
+  ];
 
   return (
-    <main style={{ padding: "2rem", maxWidth: 980 }}>
-      <h1>Progress Tracker</h1>
-      <p style={{ opacity: 0.8 }}>
-        Each completed <b>Focus</b> session grows a new plant into a tree. Do enough cycles and you build a forest.
-      </p>
-
-      <section
-        style={{
-          marginTop: "1.5rem",
-          padding: "1.25rem",
-          border: "1px solid rgba(255,255,255,0.12)",
-          borderRadius: "0.75rem",
-        }}
-      >
-        <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap" }}>
-          <div>
-            <div style={{ opacity: 0.8 }}>Today</div>
-            <div style={{ fontSize: "2rem", fontWeight: 700 }}>{todaySessions}</div>
-          </div>
-          <div>
-            <div style={{ opacity: 0.8 }}>Total focus sessions</div>
-            <div style={{ fontSize: "2rem", fontWeight: 700 }}>{totalSessions}</div>
-          </div>
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+        <div className="mb-10">
+          <h1 className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
+            Progress
+          </h1>
+          <p className="text-neutral-500 dark:text-neutral-400 mt-1 text-sm">
+            Your study sessions and focus streaks.
+          </p>
         </div>
 
-        <div style={{ marginTop: "1.5rem" }}>
-          <div style={{ opacity: 0.85, marginBottom: "0.75rem" }}>Your forest</div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(28px, 1fr))",
-              gap: "10px",
-              padding: "1rem",
-              borderRadius: "0.75rem",
-              border: "1px solid rgba(255,255,255,0.10)",
-              minHeight: "120px",
-            }}
-          >
-            {forestCells.length === 0 ? (
-              <div style={{ opacity: 0.7 }}>
-                No trees yet. Complete one focus cycle to grow your first 🌱
-              </div>
-            ) : (
-              forestCells.map((icon, idx) => {
-                const isAnimating = animIndex !== null && idx === animIndex;
-                return (
-                  <div
-                    key={`${idx}-${icon}-${isAnimating ? animFrame : "done"}`}
-                    style={{
-                      fontSize: "24px",
-                      lineHeight: "24px",
-                      textAlign: "center",
-                      userSelect: "none",
-                      transformOrigin: "bottom center",
-                      animation: isAnimating ? "pop 420ms ease-out" : undefined,
-                    }}
-                    title={isAnimating ? "Growing..." : "Tree"}
-                  >
-                    {icon}
-                  </div>
-                );
-              })
-            )}
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="w-6 h-6 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
           </div>
-
-          {hiddenCount > 0 && (
-            <div style={{ marginTop: "0.75rem", opacity: 0.75 }}>
-              Showing first {MAX_VISIBLE} trees. (+{hiddenCount} more)
+        ) : (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-8">
+              {stats.map((s) => (
+                <div
+                  key={s.label}
+                  className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-4"
+                >
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1 leading-tight">
+                    {s.label}
+                  </p>
+                  <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-50">
+                    {s.value}
+                  </p>
+                </div>
+              ))}
             </div>
-          )}
-        </div>
 
-        <div style={{ marginTop: "1.25rem" }}>
-          <button
-            onClick={handleResetProgress}
-            style={{
-              padding: "0.6rem 1rem",
-              borderRadius: 10,
-              border: "1px solid rgba(255,255,255,0.2)",
-              cursor: "pointer",
-            }}
-          >
-            Reset Forest
-          </button>
-        </div>
-      </section>
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 mb-6">
+              <h2 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-5">
+                Sessions — last 14 days
+              </h2>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart
+                  data={chartData}
+                  barSize={14}
+                  margin={{ top: 0, right: 0, bottom: 0, left: -20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} interval={1} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: "#f3f4f6" }} />
+                  <Bar dataKey="sessions" name="Sessions" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
 
-      <style jsx global>{`
-        @keyframes pop {
-          0% {
-            transform: scale(0.75) translateY(6px);
-          }
-          65% {
-            transform: scale(1.15) translateY(-2px);
-          }
-          100% {
-            transform: scale(1) translateY(0);
-          }
-        }
-      `}</style>
-    </main>
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 mb-6">
+              <h2 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-5">
+                Focus minutes — last 14 days
+              </h2>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={chartData} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} interval={1} />
+                  <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line type="monotone" dataKey="minutes" name="Minutes" stroke="#10b981" strokeWidth={2} dot={{ r: 3, fill: "#10b981" }} activeDot={{ r: 5 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            {sessions.length > 0 && (
+              <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6">
+                <h2 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-4">
+                  Recent sessions
+                </h2>
+                <div className="space-y-2">
+                  {sessions.slice(0, 10).map((s) => (
+                    <div key={s.id} className="flex items-center justify-between text-sm py-2 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-indigo-400" />
+                        <span className="text-neutral-700 dark:text-neutral-300">
+                          {s.label ?? "Focus session"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4 text-neutral-400 dark:text-neutral-500">
+                        <span>{s.duration ?? 25} min</span>
+                        <span>
+                          {s.completedAt.toDate().toLocaleDateString("en-GB", {
+                            day: "numeric",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {sessions.length === 0 && (
+              <div className="text-center py-20 text-neutral-400 dark:text-neutral-600">
+                <p className="text-4xl mb-3">🍅</p>
+                <p className="text-sm">
+                  No sessions yet. Complete a Pomodoro to start tracking.
+                </p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
   );
 }
