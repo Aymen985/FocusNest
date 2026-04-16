@@ -56,7 +56,7 @@ function FlipCard({
             className="absolute inset-0 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl flex flex-col items-center justify-center p-8"
             style={{ backfaceVisibility: "hidden" }}
           >
-            <span className="text-xs font-medium text-indigo-400 mb-4 tracking-widest uppercase">
+            <span className="text-xs font-medium text-emerald-400 mb-4 tracking-widest uppercase">
               Question
             </span>
             <p className="text-lg font-semibold text-neutral-800 dark:text-neutral-100 text-center leading-snug">
@@ -66,13 +66,13 @@ function FlipCard({
           </div>
           {/* Back */}
           <div
-            className="absolute inset-0 bg-indigo-50 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800 rounded-2xl flex flex-col items-center justify-center p-8"
+            className="absolute inset-0 bg-emerald-50 dark:bg-emerald-950 border border-indigo-200 dark:border-indigo-800 rounded-2xl flex flex-col items-center justify-center p-8"
             style={{
               backfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
             }}
           >
-            <span className="text-xs font-medium text-indigo-500 mb-4 tracking-widest uppercase">
+            <span className="text-xs font-medium text-emerald-500 mb-4 tracking-widest uppercase">
               Answer
             </span>
             <p className="text-base text-neutral-700 dark:text-neutral-200 text-center leading-relaxed">
@@ -180,7 +180,7 @@ export default function FlashcardsPage() {
             >
               {tab}
               {tab === "study" && cards.length > 0 && (
-                <span className="ml-1 text-xs text-indigo-400">
+                <span className="ml-1 text-xs text-emerald-400">
                   ({cards.length})
                 </span>
               )}
@@ -198,7 +198,7 @@ export default function FlashcardsPage() {
               <select
                 value={selectedDoc}
                 onChange={(e) => setSelectedDoc(e.target.value)}
-                className="w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="">All documents</option>
                 {docs.map((d) => (
@@ -211,7 +211,7 @@ export default function FlashcardsPage() {
 
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Number of cards — {cardCount}
+                Number of cards � {cardCount}
               </label>
               <input
                 type="range"
@@ -243,12 +243,12 @@ export default function FlashcardsPage() {
             <button
               onClick={generate}
               disabled={generating || docs.length === 0}
-              className="w-full py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
             >
               {generating ? (
                 <>
                   <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                  Generating…
+                  Generating�
                 </>
               ) : (
                 "Generate flashcards"
@@ -271,7 +271,7 @@ export default function FlashcardsPage() {
                 disabled={currentIndex === 0}
                 className="px-5 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 text-sm text-neutral-700 dark:text-neutral-300 disabled:opacity-30 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
-                ← Prev
+                ? Prev
               </button>
               <button
                 onClick={() =>
@@ -280,7 +280,7 @@ export default function FlashcardsPage() {
                 disabled={currentIndex === cards.length - 1}
                 className="px-5 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 text-sm text-neutral-700 dark:text-neutral-300 disabled:opacity-30 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
-                Next →
+                Next ?
               </button>
             </div>
             {/* All cards list */}
@@ -323,7 +323,7 @@ export default function FlashcardsPage() {
                     setCurrentIndex(0);
                     setView("study");
                   }}
-                  className="w-full text-left bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors"
+                  className="w-full text-left bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors"
                 >
                   <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
                     {s.count} flashcards

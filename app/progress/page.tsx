@@ -23,7 +23,7 @@ import {
   Line,
 } from "recharts";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// --- Types --------------------------------------------------------------------
 
 interface PomodoroSession {
   id: string;
@@ -38,7 +38,7 @@ interface DayStat {
   minutes: number;
 }
 
-// ─── Dark-mode hook ───────────────────────────────────────────────────────────
+// --- Dark-mode hook -----------------------------------------------------------
 
 function useDarkMode(): boolean {
   const [dark, setDark] = useState(false);
@@ -54,7 +54,7 @@ function useDarkMode(): boolean {
   return dark;
 }
 
-// ─── Chart colour tokens ──────────────────────────────────────────────────────
+// --- Chart colour tokens ------------------------------------------------------
 
 function chartTokens(dark: boolean) {
   return {
@@ -66,7 +66,7 @@ function chartTokens(dark: boolean) {
   };
 }
 
-// ─── Stat helpers ─────────────────────────────────────────────────────────────
+// --- Stat helpers -------------------------------------------------------------
 
 function getStreakInfo(sessions: PomodoroSession[]): { current: number; longest: number } {
   if (!sessions.length) return { current: 0, longest: 0 };
@@ -120,7 +120,7 @@ function getLast14Days(sessions: PomodoroSession[]): DayStat[] {
   return Object.values(map);
 }
 
-// ─── Tooltip style helper (uses built-in Recharts tooltip, no custom component) ─
+// --- Tooltip style helper (uses built-in Recharts tooltip, no custom component) -
 
 function tooltipStyle(dark: boolean) {
   const t = chartTokens(dark);
@@ -143,7 +143,7 @@ function tooltipStyle(dark: boolean) {
   };
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// --- Page ---------------------------------------------------------------------
 
 export default function ProgressPage() {
   const { user }  = useAuth();
@@ -188,7 +188,7 @@ export default function ProgressPage() {
     { label: "Avg sessions / day", value: avgDaily },
   ];
 
-  // Shared axis props — defined once, reused in both charts
+  // Shared axis props � defined once, reused in both charts
   const xAxisProps = {
     dataKey: "date" as const,
     tick: { fontSize: 11, fill: t.tick },
@@ -219,7 +219,7 @@ export default function ProgressPage() {
 
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="w-6 h-6 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+            <div className="w-6 h-6 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
           </div>
         ) : (
           <>
@@ -240,10 +240,10 @@ export default function ProgressPage() {
               ))}
             </div>
 
-            {/* Bar chart — sessions */}
+            {/* Bar chart � sessions */}
             <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 mb-6">
               <h2 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-5">
-                Sessions — last 14 days
+                Sessions � last 14 days
               </h2>
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart
@@ -258,15 +258,15 @@ export default function ProgressPage() {
                     {...tooltipStyle(dark)}
                     cursor={{ fill: t.cursor }}
                   />
-                  <Bar dataKey="sessions" name="Sessions" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="sessions" name="Sessions" fill="#10b981" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
 
-            {/* Line chart — minutes */}
+            {/* Line chart � minutes */}
             <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 mb-6">
               <h2 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-5">
-                Focus minutes — last 14 days
+                Focus minutes � last 14 days
               </h2>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart
@@ -303,7 +303,7 @@ export default function ProgressPage() {
                       className="flex items-center justify-between text-sm py-2 border-b border-neutral-100 dark:border-neutral-800 last:border-0"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-indigo-400 flex-shrink-0" />
+                        <div className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
                         <span className="text-neutral-700 dark:text-neutral-300">
                           {s.label ?? "Focus session"}
                         </span>
@@ -327,7 +327,7 @@ export default function ProgressPage() {
 
             {sessions.length === 0 && (
               <div className="text-center py-20 text-neutral-400 dark:text-neutral-600">
-                <p className="text-4xl mb-3">🍅</p>
+                <p className="text-4xl mb-3">??</p>
                 <p className="text-sm">
                   No sessions yet. Complete a Pomodoro to start tracking.
                 </p>

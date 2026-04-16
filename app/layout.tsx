@@ -4,6 +4,9 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { AuthProvider } from "@/context/AuthContext";
 import { PomodoroProvider } from "@/context/PomodoroContext";
+import { GuestProvider } from "@/context/GuestContext";
+import { LanguageProvider } from "@/context/LanguageContext";
+import WelcomeModal from "@/components/WelcomeModal";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,19 +20,19 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "FocusNest — Study Smarter",
-  description: "FocusNest is your all-in-one study productivity app. Plan your week, track sessions with Pomodoro, generate AI flashcards, and chat with your documents.",
+  description: "FocusNest is your all-in-one study productivity app.",
   keywords: ["study", "productivity", "pomodoro", "flashcards", "AI assistant", "timetable"],
   authors: [{ name: "FocusNest" }],
   openGraph: {
     title: "FocusNest — Study Smarter",
-    description: "Your all-in-one study productivity app with Pomodoro, AI assistant, flashcards, and weekly timetable.",
-    images: ["/Focusnest_Logo.png"],
+    description: "Your all-in-one study productivity app.",
+    images: ["/icon.png"],
     type: "website",
   },
   icons: {
-    icon: "/Focusnest_Logo.png",
-    shortcut: "/Focusnest_Logo.png",
-    apple: "/Focusnest_Logo.png",
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
   },
 };
 
@@ -39,13 +42,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" dir="ltr" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('focusnest_theme');if(t==='dark'){document.documentElement.classList.add('dark');document.documentElement.removeAttribute('data-theme')}else if(t==='light'){document.documentElement.classList.remove('dark');document.documentElement.setAttribute('data-theme','light')}else if(window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.classList.add('dark')}var l=localStorage.getItem('focusnest_lang');if(l){document.documentElement.setAttribute('lang',l);document.documentElement.setAttribute('dir',l==='ar'?'rtl':'ltr')}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider>
-          <PomodoroProvider>
-            <Navbar />
-            {children}
-          </PomodoroProvider>
+          <GuestProvider>
+            <LanguageProvider>
+              <PomodoroProvider>
+                <Navbar />
+                <WelcomeModal />
+                {children}
+              </PomodoroProvider>
+            </LanguageProvider>
+          </GuestProvider>
         </AuthProvider>
       </body>
     </html>

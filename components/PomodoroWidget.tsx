@@ -99,8 +99,8 @@ export default function PomodoroWidget() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold text-neutral-100">Pomodoro</h2>
-        <Link href="/pomodoro" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
-          Full view →
+        <Link href="/pomodoro" className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors">
+          Full view ?
         </Link>
       </div>
 
@@ -119,7 +119,7 @@ export default function PomodoroWidget() {
           className={`${btnBase} ${
             isRunning
               ? "bg-neutral-800 border-neutral-700 text-neutral-200 hover:bg-neutral-700"
-              : "bg-indigo-500 border-indigo-500 text-white hover:bg-indigo-600"
+              : "bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600"
           }`}
         >
           {isRunning ? "Pause" : "Start"}
@@ -157,7 +157,7 @@ export default function PomodoroWidget() {
               value={value}
               disabled={isRunning}
               onChange={(e) => set(clampInt(Number(e.target.value), min, max))}
-              className="w-16 bg-neutral-800 border border-neutral-700 rounded-lg px-2 py-1 text-sm text-neutral-100 text-center focus:outline-none focus:border-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              className="w-16 bg-neutral-800 border border-neutral-700 rounded-lg px-2 py-1 text-sm text-neutral-100 text-center focus:outline-none focus:border-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition"
             />
           </div>
         ))}

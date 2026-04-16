@@ -114,7 +114,7 @@ export default function AssistantPage() {
             onClick={() => setDocContext((v) => !v)}
             className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
               docContext
-                ? "bg-indigo-500"
+                ? "bg-emerald-500"
                 : "bg-neutral-300 dark:bg-neutral-700"
             }`}
           >
@@ -131,9 +131,9 @@ export default function AssistantPage() {
       <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-4">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center mb-4">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center mb-4">
               <svg
-                className="w-6 h-6 text-indigo-500"
+                className="w-6 h-6 text-emerald-500"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -178,14 +178,14 @@ export default function AssistantPage() {
             className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
           >
             {m.role === "assistant" && (
-              <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
-                <span className="text-indigo-500 text-xs font-bold">AI</span>
+              <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
+                <span className="text-emerald-500 text-xs font-bold">AI</span>
               </div>
             )}
             <div
               className={`max-w-[75%] sm:max-w-[65%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                 m.role === "user"
-                  ? "bg-indigo-500 text-white rounded-br-md"
+                  ? "bg-emerald-500 text-white rounded-br-md"
                   : "bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200 rounded-bl-md"
               }`}
             >
@@ -214,7 +214,7 @@ export default function AssistantPage() {
             value={input}
             onChange={(e) => { setInput(e.target.value); autoResize(); }}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about your documents… (Shift+Enter for new line)"
+            placeholder="Ask about your documents� (Shift+Enter for new line)"
             rows={1}
             className="flex-1 resize-none bg-transparent text-sm text-neutral-800 dark:text-neutral-200 placeholder-neutral-400 dark:placeholder-neutral-500 outline-none py-1"
             style={{ maxHeight: 160 }}
@@ -222,7 +222,7 @@ export default function AssistantPage() {
           <button
             type="submit"
             disabled={!input.trim() || streaming}
-            className="w-8 h-8 rounded-xl bg-indigo-500 disabled:opacity-40 flex items-center justify-center flex-shrink-0 transition-opacity hover:bg-indigo-600"
+            className="w-8 h-8 rounded-xl bg-emerald-500 disabled:opacity-40 flex items-center justify-center flex-shrink-0 transition-opacity hover:bg-emerald-600"
           >
             <svg
               className="w-4 h-4 text-white"
@@ -240,7 +240,7 @@ export default function AssistantPage() {
           </button>
         </form>
         <p className="text-center text-xs text-neutral-400 mt-2">
-          Enter to send · Shift+Enter for new line
+          Enter to send � Shift+Enter for new line
         </p>
       </div>
     </div>

@@ -1,8 +1,14 @@
 @import "tailwindcss";
 
+/* Tailwind v4: class-based dark mode */
+@variant dark (&:where(.dark *), &:where(.dark));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --accent: #10b981;
+  --accent-hover: #059669;
+  --accent-light: rgba(16, 185, 129, 0.12);
 }
 
 @theme inline {
@@ -12,8 +18,15 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Class-based dark mode variables */
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+/* OS fallback when no explicit choice saved */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
@@ -23,4 +36,11 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* Global focus ring */
+*:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
 }

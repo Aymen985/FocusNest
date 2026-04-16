@@ -6,7 +6,7 @@ import {
   collection, getDocs, doc, deleteDoc, query, orderBy,
 } from "firebase/firestore";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// --- Types --------------------------------------------------------------------
 
 type Doc = {
   id: string;
@@ -21,7 +21,7 @@ type UploadState =
   | { status: "success"; name: string }
   | { status: "error"; message: string };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// --- Helpers ------------------------------------------------------------------
 
 const ACCEPTED = [
   "application/pdf",
@@ -33,9 +33,9 @@ const MAX_MB = 20;
 
 function fileIcon(name: string) {
   const ext = name.split(".").pop()?.toLowerCase();
-  if (ext === "pdf")  return { icon: "📄", color: "text-red-400",    bg: "bg-red-500/10"    };
-  if (ext === "docx") return { icon: "📝", color: "text-blue-400",   bg: "bg-blue-500/10"   };
-  return                     { icon: "📃", color: "text-neutral-400", bg: "bg-neutral-500/10" };
+  if (ext === "pdf")  return { icon: "??", color: "text-red-400",    bg: "bg-red-500/10"    };
+  if (ext === "docx") return { icon: "??", color: "text-blue-400",   bg: "bg-blue-500/10"   };
+  return                     { icon: "??", color: "text-neutral-400", bg: "bg-neutral-500/10" };
 }
 
 function formatDate(iso: string) {
@@ -45,12 +45,12 @@ function formatDate(iso: string) {
 }
 
 function formatSize(chunks: number) {
-  // rough estimate: ~500 chars/chunk → ~0.5 KB
+  // rough estimate: ~500 chars/chunk ? ~0.5 KB
   const kb = Math.round(chunks * 0.5);
   return kb > 999 ? `${(kb / 1000).toFixed(1)} MB` : `${kb} KB`;
 }
 
-// ─── Upload area ──────────────────────────────────────────────────────────────
+// --- Upload area --------------------------------------------------------------
 
 function UploadZone({
   onUpload,
@@ -91,7 +91,7 @@ function UploadZone({
         border-2 border-dashed rounded-2xl px-6 py-10 text-center
         transition-all cursor-pointer select-none
         ${drag
-          ? "border-indigo-500 bg-indigo-500/5"
+          ? "border-emerald-500 bg-emerald-500/5"
           : "border-neutral-700 hover:border-neutral-500 hover:bg-neutral-800/40"
         }
         ${busy ? "pointer-events-none opacity-70" : ""}
@@ -106,11 +106,11 @@ function UploadZone({
       />
 
       {/* Icon */}
-      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${drag ? "bg-indigo-500/20" : "bg-neutral-800"}`}>
+      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${drag ? "bg-emerald-500/20" : "bg-neutral-800"}`}>
         {busy ? (
-          <div className="w-5 h-5 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+          <div className="w-5 h-5 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
         ) : (
-          <svg className={`w-6 h-6 transition-colors ${drag ? "text-indigo-400" : "text-neutral-400"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <svg className={`w-6 h-6 transition-colors ${drag ? "text-emerald-400" : "text-neutral-400"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
           </svg>
         )}
@@ -120,11 +120,11 @@ function UploadZone({
       {uploadState.status === "uploading" ? (
         <>
           <p className="text-sm font-medium text-neutral-300">
-            Uploading {uploadState.name}…
+            Uploading {uploadState.name}�
           </p>
           <div className="w-48 h-1.5 rounded-full bg-neutral-700 overflow-hidden">
             <div
-              className="h-full rounded-full bg-indigo-500 transition-all duration-300"
+              className="h-full rounded-full bg-emerald-500 transition-all duration-300"
               style={{ width: `${uploadState.progress}%` }}
             />
           </div>
@@ -136,7 +136,7 @@ function UploadZone({
               {drag ? "Drop to upload" : "Drop a file or click to browse"}
             </p>
             <p className="text-xs text-neutral-500 mt-1">
-              PDF, DOCX, or TXT · max {MAX_MB} MB
+              PDF, DOCX, or TXT � max {MAX_MB} MB
             </p>
           </div>
         </>
@@ -147,7 +147,7 @@ function UploadZone({
   );
 }
 
-// ─── Document row ─────────────────────────────────────────────────────────────
+// --- Document row -------------------------------------------------------------
 
 function DocRow({
   doc: d,
@@ -173,7 +173,7 @@ function DocRow({
           {d.name}
         </p>
         <p className="text-xs text-neutral-500 mt-0.5">
-          {d.chunkCount} chunks · ~{formatSize(d.chunkCount)} · {formatDate(d.uploadedAt)}
+          {d.chunkCount} chunks � ~{formatSize(d.chunkCount)} � {formatDate(d.uploadedAt)}
         </p>
       </div>
 
@@ -183,13 +183,13 @@ function DocRow({
         disabled={deleting}
         className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity px-2.5 py-1.5 rounded-lg text-xs font-medium border border-red-500/30 text-red-400 hover:bg-red-500/10 disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        {deleting ? "Deleting…" : "Delete"}
+        {deleting ? "Deleting�" : "Delete"}
       </button>
     </div>
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// --- Page ---------------------------------------------------------------------
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Doc[]>([]);
@@ -197,7 +197,7 @@ export default function DocumentsPage() {
   const [deleting, setDeleting]   = useState<string | null>(null);
   const [uploadState, setUploadState] = useState<UploadState>({ status: "idle" });
 
-  // ── Fetch ──
+  // -- Fetch --
   async function fetchDocuments() {
     const user = auth.currentUser;
     if (!user) return;
@@ -215,7 +215,7 @@ export default function DocumentsPage() {
     return unsub;
   }, []);
 
-  // ── Upload ──
+  // -- Upload --
   async function handleUpload(file: File) {
     // validate type
     if (!ACCEPTED.includes(file.type) && !file.name.endsWith(".txt")) {
@@ -269,7 +269,7 @@ export default function DocumentsPage() {
     }
   }
 
-  // ── Delete ──
+  // -- Delete --
   async function handleDelete(docId: string) {
     const user = auth.currentUser;
     if (!user) return;
@@ -289,14 +289,14 @@ export default function DocumentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950">
+    <div className="min-h-screen bg-white dark:bg-neutral-950">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
 
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-neutral-50 tracking-tight">Documents</h1>
           <p className="text-sm text-neutral-400 mt-1">
-            Upload study materials — your assistant will use them to answer questions.
+            Upload study materials � your assistant will use them to answer questions.
           </p>
         </div>
 
@@ -308,7 +308,7 @@ export default function DocumentsPage() {
         {/* Upload feedback */}
         {uploadState.status === "success" && (
           <p className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2 mb-4">
-            ✓ "{uploadState.name}" uploaded successfully.
+            ? "{uploadState.name}" uploaded successfully.
           </p>
         )}
         {uploadState.status === "error" && (
@@ -337,11 +337,11 @@ export default function DocumentsPage() {
           <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden">
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="w-5 h-5 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+                <div className="w-5 h-5 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
               </div>
             ) : documents.length === 0 ? (
               <div className="px-4 py-10 text-center">
-                <p className="text-2xl mb-2">📂</p>
+                <p className="text-2xl mb-2">??</p>
                 <p className="text-sm font-medium text-neutral-400 mb-1">No documents yet</p>
                 <p className="text-xs text-neutral-600">
                   Upload a PDF, DOCX, or TXT above to get started.

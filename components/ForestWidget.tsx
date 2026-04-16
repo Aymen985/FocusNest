@@ -36,8 +36,8 @@ export default function ForestWidget() {
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-semibold text-neutral-100">Forest</h2>
-        <Link href="/progress" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
-          Full view →
+        <Link href="/progress" className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors">
+          Full view ?
         </Link>
       </div>
 
@@ -51,19 +51,19 @@ export default function ForestWidget() {
       <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-3 min-h-[120px] grid grid-cols-6 gap-2">
         {visible === 0 ? (
           <div className="col-span-6 flex items-center justify-center text-xs text-neutral-600 text-center py-4">
-            Complete a focus cycle to grow your first 🌱
+            Complete a focus cycle to grow your first ??
           </div>
         ) : (
           Array.from({ length: visible }).map((_, i) => (
             <div key={i} className="text-xl text-center select-none leading-none">
-              🌳
+              ??
             </div>
           ))
         )}
       </div>
 
       {hidden > 0 && (
-        <p className="text-xs text-neutral-600 mt-2">+{hidden} more trees…</p>
+        <p className="text-xs text-neutral-600 mt-2">+{hidden} more trees�</p>
       )}
     </div>
   );

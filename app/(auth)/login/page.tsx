@@ -6,11 +6,13 @@ import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import Link from "next/link";
+import { useLanguage } from "@/context/LanguageContext";
 import LoadingScreen from "@/components/LoadingScreen";
 
 export default function LoginPage() {
   const { login, user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
@@ -66,7 +68,7 @@ export default function LoginPage() {
           </label>
           <input
             type="email"
-            placeholder="you@example.com"
+            placeholder={t.ph_email}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -120,7 +122,7 @@ export default function LoginPage() {
           disabled={loading}
           className="w-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-xl py-2.5 transition-colors mt-1"
         >
-          {loading ? "Signing in…" : "Sign in"}
+          {loading ? t.auth_signing_in : t.auth_sign_in}
         </button>
       </form>
 

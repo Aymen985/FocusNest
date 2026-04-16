@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-white dark:bg-neutral-950 flex flex-col items-center justify-center px-4 py-12">
       {/* Brand mark */}
       <Link
         href="/"

@@ -11,8 +11,11 @@ import {
 import { auth } from "@/lib/firebase";
 import { updateUserProfile } from "@/lib/userProfile";
 import LoadingScreen from "@/components/LoadingScreen";
+import { AVATARS, getAvatar, type AvatarId } from "@/components/avatars";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
-/* ─── tiny helpers ─────────────────────────────────────── */
+/* --- tiny helpers --------------------------------------- */
 function initials(first: string, last: string) {
   return `${first?.[0] ?? ""}${last?.[0] ?? ""}`.toUpperCase() || "?";
 }
@@ -72,12 +75,12 @@ function StatusMsg({ msg }: { msg: string }) {
   const ok = msg.toLowerCase().includes("success");
   return (
     <p className={`fn-status ${ok ? "fn-status--ok" : "fn-status--err"}`}>
-      {ok ? "✓" : "✕"} {msg}
+      {ok ? "?" : "?"} {msg}
     </p>
   );
 }
 
-/* ─── main page ────────────────────────────────────────── */
+/* --- main page ------------------------------------------ */
 export default function ProfilePage() {
   const { user, userProfile, logout, loading } = useAuth();
   const router = useRouter();
@@ -87,6 +90,9 @@ export default function ProfilePage() {
   const [major, setMajor] = useState("");
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
+  const [avatarId, setAvatarId] = useState<AvatarId | "">("");
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [savingAvatar, setSavingAvatar] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -111,11 +117,22 @@ export default function ProfilePage() {
       setLastName(userProfile.lastName || "");
       setMajor(userProfile.major || "");
       setPhone(userProfile.phone || "");
+      setAvatarId((userProfile.avatar as AvatarId) || "");
     }
   }, [userProfile]);
 
   if (loading) return <LoadingScreen />;
   if (!user) return null;
+
+  async function handleSaveAvatar(id: AvatarId) {
+    setAvatarId(id);
+    setShowAvatarPicker(false);
+    setSavingAvatar(true);
+    try {
+      await updateDoc(doc(db, "users", user!.uid), { avatar: id });
+    } catch (e) { console.error(e); }
+    setSavingAvatar(false);
+  }
 
   async function handleSaveProfile(e: React.FormEvent) {
     e.preventDefault();
@@ -161,19 +178,33 @@ export default function ProfilePage() {
 
   return (
     <>
-      {/* ── scoped styles ── */}
+      {/* -- scoped styles -- */}
       <style>{`
-        /* Palette — dark-first, matches FocusNest app theme */
+        /* Palette � light mode default */
         :root {
+          --fn-parchment:   #f9fafb;
+          --fn-paper:       #ffffff;
+          --fn-ink:         #111111;
+          --fn-ink-muted:   #4b5563;
+          --fn-ink-subtle:  #9ca3af;
+          --fn-terra:       #10b981;
+          --fn-terra-light: rgba(16,185,129,0.12);
+          --fn-sage:        #10b981;
+          --fn-sage-light:  rgba(16,185,129,0.10);
+          --fn-border:      #e5e7eb;
+          --fn-shadow:      0 2px 12px rgba(0,0,0,0.07);
+        }
+        /* Dark mode � responds to .dark on <html> */
+        .dark {
           --fn-parchment:   #111111;
           --fn-paper:       #1a1a1a;
           --fn-ink:         #f0f0f0;
           --fn-ink-muted:   #a0a0a0;
           --fn-ink-subtle:  #606060;
-          --fn-terra:       #6c63ff;
-          --fn-terra-light: rgba(108,99,255,0.15);
-          --fn-sage:        #6c63ff;
-          --fn-sage-light:  rgba(108,99,255,0.12);
+          --fn-terra:       #10b981;
+          --fn-terra-light: rgba(16,185,129,0.15);
+          --fn-sage:        #10b981;
+          --fn-sage-light:  rgba(16,185,129,0.12);
           --fn-border:      rgba(255,255,255,0.08);
           --fn-shadow:      0 2px 16px rgba(0,0,0,0.4);
         }
@@ -491,13 +522,76 @@ export default function ProfilePage() {
       <div className={`fn-page${mounted ? " fn-mounted" : ""}`}>
         <div className="fn-inner">
 
-          {/* ── Hero ── */}
-          <div className="fn-hero">
-            <div className="fn-avatar-ring">
-              <div className="fn-avatar-inner">
-                {initials(firstName, lastName)}
-              </div>
+          {/* -- Hero -- */}
+          <div className="fn-hero" style={{ position: "relative" }}>
+            <div className="fn-avatar-ring" style={{ cursor: "pointer", position: "relative" }}
+              onClick={() => setShowAvatarPicker(v => !v)}>
+              {avatarId ? (
+                <div className="fn-avatar-inner" style={{ padding: 0, overflow: "hidden" }}
+                  dangerouslySetInnerHTML={{ __html: getAvatar(avatarId).svg }} />
+              ) : (
+                <div className="fn-avatar-inner">
+                  {initials(firstName, lastName)}
+                </div>
+              )}
+              <span style={{
+                position: "absolute", bottom: 2, right: 2,
+                background: "#10b981", borderRadius: "50%",
+                width: 18, height: 18, display: "flex", alignItems: "center",
+                justifyContent: "center", fontSize: 10, color: "#fff", border: "2px solid var(--fn-paper)"
+              }}>??</span>
             </div>
+
+            {/* Avatar picker */}
+            {showAvatarPicker && (
+              <div style={{
+                position: "absolute", top: "100%", left: "50%",
+                transform: "translateX(-50%)",
+                background: "var(--fn-paper)", border: "1px solid var(--fn-border)",
+                borderRadius: 16, padding: "1rem", zIndex: 50,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.3)", width: 280,
+              }}>
+                <p style={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase",
+                  letterSpacing: "0.08em", color: "var(--fn-ink-subtle)", marginBottom: "0.75rem" }}>
+                  Male
+                </p>
+                <div style={{ display: "flex", gap: 8, marginBottom: "0.75rem", flexWrap: "wrap" }}>
+                  {AVATARS.filter(a => a.id.startsWith("m")).map(a => (
+                    <div key={a.id}
+                      onClick={() => handleSaveAvatar(a.id as AvatarId)}
+                      style={{
+                        width: 44, height: 44, borderRadius: "50%", cursor: "pointer",
+                        border: avatarId === a.id ? "2.5px solid #10b981" : "2.5px solid transparent",
+                        overflow: "hidden", transition: "border-color 0.15s",
+                      }}
+                      dangerouslySetInnerHTML={{ __html: a.svg }}
+                    />
+                  ))}
+                </div>
+                <p style={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase",
+                  letterSpacing: "0.08em", color: "var(--fn-ink-subtle)", marginBottom: "0.75rem" }}>
+                  Female
+                </p>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {AVATARS.filter(a => a.id.startsWith("f")).map(a => (
+                    <div key={a.id}
+                      onClick={() => handleSaveAvatar(a.id as AvatarId)}
+                      style={{
+                        width: 44, height: 44, borderRadius: "50%", cursor: "pointer",
+                        border: avatarId === a.id ? "2.5px solid #10b981" : "2.5px solid transparent",
+                        overflow: "hidden", transition: "border-color 0.15s",
+                      }}
+                      dangerouslySetInnerHTML={{ __html: a.svg }}
+                    />
+                  ))}
+                </div>
+                {savingAvatar && (
+                  <p style={{ fontSize: "0.75rem", color: "#10b981", marginTop: "0.5rem", textAlign: "center" }}>
+                    Saving�
+                  </p>
+                )}
+              </div>
+            )}
             <div>
               <p className="fn-hero-name">
                 {firstName || lastName
@@ -508,13 +602,13 @@ export default function ProfilePage() {
             </div>
             {userProfile && (
               <div className="fn-stats">
-                <StatPill label="Trees grown" value={userProfile.treeCount} icon="🌳" />
-                <StatPill label="Sessions" value={userProfile.totalSessions} icon="⏱" />
+                <StatPill label="Trees grown" value={userProfile.treeCount} icon="??" />
+                <StatPill label="Sessions" value={userProfile.totalSessions} icon="?" />
               </div>
             )}
           </div>
 
-          {/* ── Personal info ── */}
+          {/* -- Personal info -- */}
           <SectionCard title="Personal info">
             <form onSubmit={handleSaveProfile}>
               <div className="fn-grid2">
@@ -556,7 +650,7 @@ export default function ProfilePage() {
 
               <Field label="Email address">
                 <div className="fn-email-row">
-                  <span className="fn-email-lock">🔒</span>
+                  <span className="fn-email-lock">??</span>
                   {user.email}
                 </div>
               </Field>
@@ -565,12 +659,12 @@ export default function ProfilePage() {
               <StatusMsg msg={saveMsg} />
 
               <button type="submit" className="fn-btn fn-btn-primary" disabled={saving}>
-                {saving ? "Saving…" : "Save changes"}
+                {saving ? "Saving�" : "Save changes"}
               </button>
             </form>
           </SectionCard>
 
-          {/* ── Change password ── */}
+          {/* -- Change password -- */}
           <SectionCard title="Change password">
             <form onSubmit={handleChangePassword}>
               <Field label="Current password">
@@ -603,12 +697,12 @@ export default function ProfilePage() {
                 className="fn-btn fn-btn-primary"
                 disabled={changingPassword}
               >
-                {changingPassword ? "Updating…" : "Update password"}
+                {changingPassword ? "Updating�" : "Update password"}
               </button>
             </form>
           </SectionCard>
 
-          {/* ── Account actions ── */}
+          {/* -- Account actions -- */}
           <SectionCard title="Account">
             <p style={{ fontSize: "0.85rem", color: "var(--fn-ink-muted)", marginBottom: "1rem", fontFamily: "Arial, sans-serif", lineHeight: 1.5 }}>
               Signing out will end your current session on this device.
@@ -624,11 +718,11 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* ── Logout modal ── */}
+      {/* -- Logout modal -- */}
       {showLogoutConfirm && (
         <div className="fn-overlay" onClick={() => setShowLogoutConfirm(false)}>
           <div className="fn-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="fn-modal-icon">🍃</div>
+            <div className="fn-modal-icon">??</div>
             <p className="fn-modal-title">Sign out of FocusNest?</p>
             <p className="fn-modal-body">
               Your progress and data are safely saved. You can sign back in any time.

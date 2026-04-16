@@ -9,7 +9,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// --- Types --------------------------------------------------------------------
 
 type Priority = "mandatory" | "optional";
 type Status   = "planned" | "in-progress" | "completed" | "missed";
@@ -46,10 +46,10 @@ interface ScheduledSession {
   weekKey: string;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// --- Constants ----------------------------------------------------------------
 
 const COLOR_PALETTE = [
-  { label: "Indigo",  value: "#6366f1" },
+  { label: "Indigo",  value: "#10b981" },
   { label: "Rose",    value: "#f43f5e" },
   { label: "Amber",   value: "#f59e0b" },
   { label: "Emerald", value: "#10b981" },
@@ -70,7 +70,7 @@ const SNAP       = 15;
 const DAYS       = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DAY_HEIGHT = GRID_TOTAL * PX_PER_MIN;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// --- Helpers ------------------------------------------------------------------
 
 function getWeekKey(monday: Date): string {
   const y     = monday.getFullYear();
@@ -134,7 +134,7 @@ const blankForm = () => ({
   color: COLOR_PALETTE[0].value, description: "",
 });
 
-// ─── Shared form component ────────────────────────────────────────────────────
+// --- Shared form component ----------------------------------------------------
 
 function SessionForm({
   value, onChange, onSubmit, onCancel, submitLabel, saving, error,
@@ -160,21 +160,21 @@ function SessionForm({
           onKeyDown={(e) => e.key === "Enter" && onSubmit()}
           placeholder="e.g. Math Revision"
           autoFocus
-          className="w-full px-3 py-2 text-sm rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full px-3 py-2 text-sm rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
         />
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div>
           <label className="block text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-1 uppercase tracking-wide">Duration</label>
           <select value={value.duration} onChange={(e) => onChange({ ...value, duration: Number(e.target.value) })}
-            className="w-full px-2 py-2 text-sm rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            className="w-full px-2 py-2 text-sm rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-emerald-500">
             {DURATION_OPTIONS.map((d) => <option key={d} value={d}>{formatDuration(d)}</option>)}
           </select>
         </div>
         <div>
           <label className="block text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-1 uppercase tracking-wide">Priority</label>
           <select value={value.priority} onChange={(e) => onChange({ ...value, priority: e.target.value as Priority })}
-            className="w-full px-2 py-2 text-sm rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            className="w-full px-2 py-2 text-sm rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-emerald-500">
             <option value="mandatory">Mandatory</option>
             <option value="optional">Optional</option>
           </select>
@@ -196,7 +196,7 @@ function SessionForm({
         </label>
         <textarea value={value.description} onChange={(e) => onChange({ ...value, description: e.target.value })}
           placeholder="What will you focus on?" rows={2}
-          className="w-full px-3 py-2 text-sm rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
+          className="w-full px-3 py-2 text-sm rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none" />
       </div>
       {/* Live preview */}
       <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950"
@@ -208,8 +208,8 @@ function SessionForm({
       </div>
       <div className="flex gap-2">
         <button onClick={onSubmit} disabled={saving}
-          className="flex-1 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white text-sm font-semibold transition-colors">
-          {saving ? "Saving…" : submitLabel}
+          className="flex-1 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-sm font-semibold transition-colors">
+          {saving ? "Saving�" : submitLabel}
         </button>
         <button onClick={onCancel}
           className="px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-sm transition-colors">
@@ -220,7 +220,7 @@ function SessionForm({
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// --- Main Page ----------------------------------------------------------------
 
 export default function TimetablePage() {
   const { user, loading: authLoading } = useAuth();
@@ -265,12 +265,12 @@ export default function TimetablePage() {
   const resizeRef = useRef<{ sessionId: string; originalDuration: number; startY: number } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // ── Auth guard ──────────────────────────────────────────────────────────────
+  // -- Auth guard --------------------------------------------------------------
   useEffect(() => {
     if (!authLoading && !user) router.push("/login");
   }, [user, authLoading, router]);
 
-  // ── Load data ───────────────────────────────────────────────────────────────
+  // -- Load data ---------------------------------------------------------------
   useEffect(() => {
     if (!user) return;
     async function load() {
@@ -311,7 +311,7 @@ export default function TimetablePage() {
     load();
   }, [user, weekKey, weekOffset]);
 
-  // ── CRUD ────────────────────────────────────────────────────────────────────
+  // -- CRUD --------------------------------------------------------------------
 
   async function handleCreateTemplate() {
     if (!sidebarForm.title.trim()) { setSidebarError("Title is required."); return; }
@@ -409,7 +409,7 @@ export default function TimetablePage() {
     } finally { setScheduledEditSaving(false); }
   }
 
-  // ── Resize ──────────────────────────────────────────────────────────────────
+  // -- Resize ------------------------------------------------------------------
   const handleResizeStart = useCallback((e: React.MouseEvent, sessionId: string, originalDuration: number) => {
     e.preventDefault(); e.stopPropagation();
     resizeRef.current = { sessionId, originalDuration, startY: e.clientY };
@@ -433,13 +433,13 @@ export default function TimetablePage() {
     return () => { window.removeEventListener("mousemove", onMouseMove); window.removeEventListener("mouseup", onMouseUp); };
   }, [scheduled, user]);
 
-  // ── Week helpers ────────────────────────────────────────────────────────────
+  // -- Week helpers ------------------------------------------------------------
   function getDayDate(i: number): Date {
     const d = new Date(monday); d.setDate(monday.getDate() + i); return d;
   }
   const today    = new Date(); today.setHours(0, 0, 0, 0);
   const sunday   = new Date(monday); sunday.setDate(monday.getDate() + 6);
-  const weekLabel = `${monday.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – ${sunday.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`;
+  const weekLabel = `${monday.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} � ${sunday.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`;
   const hourLabels: number[] = [];
   for (let m = GRID_START; m <= GRID_END; m += 60) hourLabels.push(m);
 
@@ -447,20 +447,20 @@ export default function TimetablePage() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white dark:bg-neutral-950">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">Loading timetable…</p>
+          <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">Loading timetable�</p>
         </div>
       </div>
     );
   }
 
-  // ─── Render ───────────────────────────────────────────────────────────────────
+  // --- Render -------------------------------------------------------------------
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-hidden flex flex-col"
         style={{ height: "calc(100vh - 120px)" }}>
 
-        {/* ── Top bar ──────────────────────────────────────────────────────── */}
+        {/* -- Top bar -------------------------------------------------------- */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-100 dark:border-neutral-800 shrink-0">
           <div className="flex items-center gap-2">
             <button onClick={() => setWeekOffset((o) => o - 1)}
@@ -469,7 +469,7 @@ export default function TimetablePage() {
             </button>
             <div className="text-center min-w-[160px]">
               <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">{weekLabel}</p>
-              <p className={`text-xs font-medium ${weekOffset === 0 ? "text-indigo-500" : "text-neutral-400"}`}>
+              <p className={`text-xs font-medium ${weekOffset === 0 ? "text-emerald-500" : "text-neutral-400"}`}>
                 {weekOffset === 0 ? "This week" : weekOffset === 1 ? "Next week" : weekOffset === -1 ? "Last week" : weekOffset > 0 ? `+${weekOffset} weeks` : `${weekOffset} weeks`}
               </p>
             </div>
@@ -491,15 +491,15 @@ export default function TimetablePage() {
           </div>
         </div>
 
-        {/* ── Body ─────────────────────────────────────────────────────────── */}
+        {/* -- Body ----------------------------------------------------------- */}
         <div className="flex flex-1 overflow-hidden">
 
-          {/* ── Left sidebar ───────────────────────────────────────────────── */}
+          {/* -- Left sidebar ------------------------------------------------- */}
           <div className="w-52 shrink-0 border-r border-neutral-100 dark:border-neutral-800 flex flex-col bg-neutral-50 dark:bg-neutral-950">
             <div className="p-3 space-y-1.5 border-b border-neutral-100 dark:border-neutral-800 shrink-0">
               <button
                 onClick={() => { setSidebarMode(sidebarMode === "new-template" ? null : "new-template"); setSidebarForm(blankForm()); setSidebarError(""); setEditingId(null); }}
-                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium transition-colors shadow-sm">
+                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium transition-colors shadow-sm">
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
                 New Template
               </button>
@@ -612,12 +612,12 @@ export default function TimetablePage() {
                           </div>
                           <div className="flex items-center gap-1.5 mt-1.5">
                             <span className="text-[10px] text-neutral-400">{formatDuration(t.duration)}</span>
-                            <span className="text-[10px] text-neutral-300 dark:text-neutral-600">·</span>
+                            <span className="text-[10px] text-neutral-300 dark:text-neutral-600">�</span>
                             <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${t.priority === "mandatory" ? "bg-red-50 dark:bg-red-950 text-red-500" : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500"}`}>
                               {t.priority}
                             </span>
                           </div>
-                          <p className="text-[9px] text-neutral-300 dark:text-neutral-700 mt-1 group-hover:text-neutral-400 transition-colors">click to edit · drag to place</p>
+                          <p className="text-[9px] text-neutral-300 dark:text-neutral-700 mt-1 group-hover:text-neutral-400 transition-colors">click to edit � drag to place</p>
                         </div>
                       )}
                     </div>
@@ -635,7 +635,7 @@ export default function TimetablePage() {
             </div>
           </div>
 
-          {/* ── Timetable grid ──────────────────────────────────────────────── */}
+          {/* -- Timetable grid ------------------------------------------------ */}
           <div className="flex flex-1 overflow-hidden">
 
             {/* Time labels */}
@@ -665,9 +665,9 @@ export default function TimetablePage() {
 
                 return (
                   <div key={day} className="flex flex-col flex-1 min-w-[90px] border-r border-neutral-100 dark:border-neutral-800 last:border-r-0">
-                    <div className={`shrink-0 h-10 flex flex-col items-center justify-center border-b border-neutral-100 dark:border-neutral-800 ${isToday ? "bg-indigo-50 dark:bg-indigo-950/40" : ""}`}>
-                      <p className={`text-[9px] font-semibold uppercase tracking-widest ${isToday ? "text-indigo-400" : "text-neutral-400 dark:text-neutral-600"}`}>{day}</p>
-                      <p className={`text-sm font-bold leading-none ${isToday ? "text-indigo-600 dark:text-indigo-400" : "text-neutral-600 dark:text-neutral-400"}`}>{date.getDate()}</p>
+                    <div className={`shrink-0 h-10 flex flex-col items-center justify-center border-b border-neutral-100 dark:border-neutral-800 ${isToday ? "bg-emerald-50 dark:bg-emerald-950/40" : ""}`}>
+                      <p className={`text-[9px] font-semibold uppercase tracking-widest ${isToday ? "text-emerald-400" : "text-neutral-400 dark:text-neutral-600"}`}>{day}</p>
+                      <p className={`text-sm font-bold leading-none ${isToday ? "text-emerald-600 dark:text-emerald-400" : "text-neutral-600 dark:text-neutral-400"}`}>{date.getDate()}</p>
                     </div>
 
                     <div
@@ -706,8 +706,8 @@ export default function TimetablePage() {
                           if (nowMin < GRID_START || nowMin > GRID_END) return null;
                           return (
                             <div className="absolute left-0 right-0 z-20 pointer-events-none flex items-center" style={{ top: (nowMin - GRID_START) * PX_PER_MIN }}>
-                              <div className="w-2 h-2 rounded-full bg-indigo-500 -ml-1 shrink-0" />
-                              <div className="flex-1 h-px bg-indigo-400 opacity-70" />
+                              <div className="w-2 h-2 rounded-full bg-emerald-500 -ml-1 shrink-0" />
+                              <div className="flex-1 h-px bg-emerald-400 opacity-70" />
                             </div>
                           );
                         })()}
@@ -717,7 +717,7 @@ export default function TimetablePage() {
                             style={{
                               top: (ghostPos.minute - GRID_START) * PX_PER_MIN,
                               height: (dragPayload.current?.duration ?? 30) * PX_PER_MIN,
-                              backgroundColor: dragPayload.current?.color ?? "#6366f1",
+                              backgroundColor: dragPayload.current?.color ?? "#10b981",
                             }} />
                         )}
 
@@ -772,7 +772,7 @@ export default function TimetablePage() {
                                   {session.status}
                                 </span>
                               )}
-                              {conflict && <span className="absolute top-1 right-1 text-[10px]">⚠️</span>}
+                              {conflict && <span className="absolute top-1 right-1 text-[10px]">??</span>}
                               {session.templateId === "one-time" && height > 40 && (
                                 <span className="absolute bottom-5 right-1.5 text-[8px] opacity-50" style={{ color: session.color }}>once</span>
                               )}
@@ -793,7 +793,7 @@ export default function TimetablePage() {
         </div>
       </div>
 
-      {/* ── Session Detail / Edit Popup ──────────────────────────────────────── */}
+      {/* -- Session Detail / Edit Popup ---------------------------------------- */}
       {selected && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
           onClick={() => { setSelected(null); setEditingScheduled(false); }}>
@@ -836,9 +836,9 @@ export default function TimetablePage() {
                   </div>
                   <div className="flex items-center gap-2 mb-3 flex-wrap">
                     <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                      {DAYS[selected.dayIndex]} · {formatTime(selected.startMinute)} – {formatTime(selected.startMinute + selected.duration)}
+                      {DAYS[selected.dayIndex]} � {formatTime(selected.startMinute)} � {formatTime(selected.startMinute + selected.duration)}
                     </span>
-                    <span className="text-xs text-neutral-300 dark:text-neutral-600">·</span>
+                    <span className="text-xs text-neutral-300 dark:text-neutral-600">�</span>
                     <span className="text-xs text-neutral-500 dark:text-neutral-400">{formatDuration(selected.duration)}</span>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${selected.priority === "mandatory" ? "bg-red-50 dark:bg-red-950 text-red-500" : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500"}`}>
                       {selected.priority}
@@ -868,7 +868,7 @@ export default function TimetablePage() {
                         handleStatusChange(selected.id, "in-progress");
                         setSelected(null);
                       }}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold transition-colors">
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition-colors">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                         <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

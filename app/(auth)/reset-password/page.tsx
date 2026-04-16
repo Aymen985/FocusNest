@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ResetPasswordPage() {
   const { resetPassword } = useAuth();
+  const { t } = useLanguage();
 
   const [email, setEmail]     = useState("");
   const [loading, setLoading] = useState(false);
@@ -43,7 +45,7 @@ export default function ResetPasswordPage() {
           </label>
           <input
             type="email"
-            placeholder="you@example.com"
+            placeholder={t.ph_email}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -67,7 +69,7 @@ export default function ResetPasswordPage() {
           disabled={loading}
           className="w-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-xl py-2.5 transition-colors"
         >
-          {loading ? "Sending…" : "Send reset link"}
+          {loading ? t.auth_sending : t.auth_send_reset}
         </button>
       </form>
 

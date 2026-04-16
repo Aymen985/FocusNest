@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 import { Suspense } from "react";
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   usePomodoroContext,
   clampInt,
@@ -244,6 +245,30 @@ function CactusTree({ stage }: { stage: GrowthStage }) {
   );
 }
 
+
+function DeadTree() {
+  return (
+    <svg viewBox="0 0 120 140" className="w-full h-full" style={{ overflow: "visible" }}>
+      <ellipse cx="60" cy="132" rx="28" ry="5" fill="#52525b" opacity="0.25" />
+      {/* Bare trunk */}
+      <rect x="54" y="72" width="12" height="60" rx="6" fill="#52525b" />
+      {/* Bare branches */}
+      <line x1="60" y1="88" x2="30" y2="66" stroke="#52525b" strokeWidth="5" strokeLinecap="round" />
+      <line x1="60" y1="88" x2="90" y2="70" stroke="#52525b" strokeWidth="5" strokeLinecap="round" />
+      <line x1="60" y1="100" x2="36" y2="84" stroke="#52525b" strokeWidth="4" strokeLinecap="round" />
+      <line x1="60" y1="100" x2="84" y2="88" stroke="#52525b" strokeWidth="4" strokeLinecap="round" />
+      <line x1="30" y1="66" x2="18" y2="52" stroke="#52525b" strokeWidth="3" strokeLinecap="round" />
+      <line x1="30" y1="66" x2="26" y2="50" stroke="#52525b" strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="90" y1="70" x2="102" y2="56" stroke="#52525b" strokeWidth="3" strokeLinecap="round" />
+      <line x1="90" y1="70" x2="94" y2="52" stroke="#52525b" strokeWidth="2.5" strokeLinecap="round" />
+      {/* Fallen leaves on ground */}
+      <ellipse cx="28" cy="128" rx="5" ry="3" fill="#78716c" opacity="0.5" transform="rotate(-20,28,128)" />
+      <ellipse cx="90" cy="130" rx="4" ry="2.5" fill="#78716c" opacity="0.4" transform="rotate(15,90,130)" />
+      <ellipse cx="50" cy="131" rx="4" ry="2" fill="#78716c" opacity="0.35" transform="rotate(-10,50,131)" />
+    </svg>
+  );
+}
+
 function TreeRenderer({ type, stage }: { type: TreeType; stage: GrowthStage }) {
   switch (type) {
     case "oak":    return <OakTree stage={stage} />;
@@ -254,10 +279,11 @@ function TreeRenderer({ type, stage }: { type: TreeType; stage: GrowthStage }) {
 }
 
 function ForestMiniTree({ tree }: { tree: ForestTree }) {
+  const isDead = (tree as any).status === "abandoned" || (tree as any).completed === false || tree.treeType === "dead";
   return (
-    <div className="flex flex-col items-center gap-1 group">
-      <div className="w-14 h-14 transition-transform group-hover:scale-110">
-        <TreeRenderer type={tree.treeType} stage={4} />
+    <div className="flex flex-col items-center gap-1 group" title={isDead ? "Abandoned session" : tree.treeType}>
+      <div className={`w-14 h-14 transition-transform group-hover:scale-110 ${isDead ? "opacity-50 grayscale" : ""}`}>
+        {isDead ? <DeadTree /> : <TreeRenderer type={tree.treeType as import("@/context/PomodoroContext").TreeType} stage={4} />}
       </div>
       <p className="text-[9px] text-neutral-500 dark:text-neutral-600 text-center leading-tight">
         {new Date(tree.completedAt.seconds * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
@@ -269,7 +295,7 @@ function ForestMiniTree({ tree }: { tree: ForestTree }) {
 function ProgressRing({ progress, phase }: { progress: number; phase: Phase }) {
   const r = 88;
   const circ = 2 * Math.PI * r;
-  const color = phase === "focus" ? "#6366f1" : "#10b981";
+  const color = phase === "focus" ? "#10b981" : "#10b981";
   return (
     <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 200 200">
       <circle cx="100" cy="100" r={r} fill="none" stroke="currentColor" strokeWidth="6"
@@ -297,6 +323,7 @@ function PomodoroInner() {
     showCelebration,
     handleStart, handlePause, handleReset, handleSwitchPhase,
   } = usePomodoroContext();
+  const { t } = useLanguage();
 
   // Pre-fill from timetable query params (only on first mount if timer not running)
   useEffect(() => {
@@ -343,10 +370,10 @@ function PomodoroInner() {
 
             <div className={`text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-widest ${
               phase === "focus"
-                ? "bg-indigo-50 dark:bg-indigo-950 text-indigo-500"
+                ? "bg-emerald-50 dark:bg-emerald-950 text-emerald-500"
                 : "bg-emerald-50 dark:bg-emerald-950 text-emerald-500"
             }`}>
-              {phase === "focus" ? "Focus phase" : "Break phase"}
+              {phase === "focus" ? t.page_pomodoro_focus + " phase" : t.page_pomodoro_break + " phase"}
             </div>
 
             <div className="relative w-56 h-56 flex items-center justify-center">
@@ -382,9 +409,9 @@ function PomodoroInner() {
             <div className="flex items-center gap-3 flex-wrap justify-center">
               {!isRunning ? (
                 <button onClick={handleStart}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold transition-colors shadow-sm">
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition-colors shadow-sm">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                  {phase === "focus" ? (currentTree ? "Resume" : "Plant & Start") : "Resume"}
+                  {phase === "focus" ? (currentTree ? t.page_pomodoro_resume : t.page_pomodoro_plant) : t.page_pomodoro_resume}
                 </button>
               ) : (
                 <button onClick={handlePause}
@@ -406,7 +433,7 @@ function PomodoroInner() {
             {showCelebration && (
               <div className="text-center animate-fade-in">
                 <p className="text-2xl mb-1">🎉</p>
-                <p className="text-sm font-semibold text-indigo-500">Tree planted! Added to your forest.</p>
+                <p className="text-sm font-semibold text-emerald-500">Tree planted! Added to your forest.</p>
               </div>
             )}
           </div>
@@ -418,8 +445,8 @@ function PomodoroInner() {
               <div>
                 <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5 uppercase tracking-wide">Session label</label>
                 <input type="text" value={label} onChange={e => setLabel(e.target.value)}
-                  placeholder="What are you studying?" disabled={isRunning}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50" />
+                  placeholder={t.ph_what_studying} disabled={isRunning}
+                  className="w-full px-3 py-2 text-sm rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -427,14 +454,14 @@ function PomodoroInner() {
                   <input type="number" min={1} max={180} value={focusMins}
                     onChange={e => setFocusMins(clampInt(Number(e.target.value), 1, 180))}
                     disabled={isRunning}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50" />
+                    className="w-full px-3 py-2 text-sm rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5 uppercase tracking-wide">Break (min)</label>
                   <input type="number" min={1} max={60} value={breakMins}
                     onChange={e => setBreakMins(clampInt(Number(e.target.value), 1, 60))}
                     disabled={isRunning}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50" />
+                    className="w-full px-3 py-2 text-sm rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50" />
                 </div>
               </div>
               {phase === "focus" && elapsed > 0 && (
@@ -444,7 +471,7 @@ function PomodoroInner() {
                     <span>{Math.round(focusProgress * 100)}%</span>
                   </div>
                   <div className="h-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-indigo-500 rounded-full transition-all duration-1000"
+                    <div className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
                       style={{ width: `${focusProgress * 100}%` }} />
                   </div>
                 </div>
@@ -460,7 +487,7 @@ function PomodoroInner() {
               </div>
               {loadingForest ? (
                 <div className="flex justify-center py-6">
-                  <div className="w-5 h-5 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+                  <div className="w-5 h-5 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
                 </div>
               ) : forestTrees.length === 0 ? (
                 <div className="text-center py-8">
