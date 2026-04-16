@@ -1,40 +1,50 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 const VISITED_KEY = "focusnest_visited";
 const GUEST_KEY   = "focusnest_guest";
 
-// Routes guests are allowed to access
 export const GUEST_ALLOWED = ["/", "/pomodoro", "/timetable"];
 
 type GuestContextType = {
-  isGuest:        boolean;
-  hasVisited:     boolean;
-  showWelcome:    boolean;
+  isGuest:         boolean;
+  hasVisited:      boolean;
+  showWelcome:     boolean;
   continueAsGuest: () => void;
-  dismissWelcome: () => void;
+  dismissWelcome:  () => void;
 };
 
 const GuestContext = createContext<GuestContextType | undefined>(undefined);
 
 export function GuestProvider({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
   const [isGuest,     setIsGuest]     = useState(false);
-  const [hasVisited,  setHasVisited]  = useState(true);  // true until we know otherwise
+  const [hasVisited,  setHasVisited]  = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
 
+  // On mount — restore state from localStorage
   useEffect(() => {
     const visited = localStorage.getItem(VISITED_KEY);
     const guest   = localStorage.getItem(GUEST_KEY);
-
     if (!visited) {
-      // First ever visit — show modal
       setHasVisited(false);
       setShowWelcome(true);
     } else if (guest === "true") {
       setIsGuest(true);
     }
   }, []);
+
+  // When a real user logs in — clear guest state immediately
+  useEffect(() => {
+    if (!loading && user) {
+      localStorage.removeItem(GUEST_KEY);
+      localStorage.setItem(VISITED_KEY, "true");
+      setIsGuest(false);
+      setShowWelcome(false);
+    }
+  }, [user, loading]);
 
   function continueAsGuest() {
     localStorage.setItem(VISITED_KEY, "true");

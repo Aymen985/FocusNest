@@ -29,7 +29,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const inputCls =
-  "w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2.5 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition";
+  "w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2.5 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition";
 
 export default function SignupPage() {
   const { signup, user, loading: authLoading } = useAuth();
@@ -62,7 +62,7 @@ export default function SignupPage() {
     setSuccess("");
 
     if (!validateEmail(email))  { setError("Invalid email format."); return; }
-    if (!validatePhone(phone))  { setError("Invalid phone � use: +XX XXXXXXXXX"); return; }
+    if (!validatePhone(phone))  { setError("Invalid phone — use: +XX XXXXXXXXX"); return; }
     if (password !== confirmPassword) { setError("Passwords do not match."); return; }
     const pwErr = validatePassword(password);
     if (pwErr) { setError(pwErr); return; }
@@ -87,7 +87,7 @@ export default function SignupPage() {
   return (
     <>
       <h1 className="text-2xl font-bold text-neutral-50 mb-1">Create account</h1>
-      <p className="text-sm text-neutral-400 mb-7">Start building your focus forest ??</p>
+      <p className="text-sm text-neutral-400 mb-7">Start building your focus forest 🌳</p>
 
       <form onSubmit={handleSignup} className="space-y-4">
         {/* Name row */}
@@ -201,22 +201,22 @@ export default function SignupPage() {
         )}
         {success && (
           <p className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
-            ? {success}
+            ✓ {success}
           </p>
         )}
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-xl py-2.5 transition-colors"
+          className="w-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-xl py-2.5 transition-colors"
         >
-          {loading ? "Creating account�" : "Create account"}
+          {loading ? "Creating account…" : "Create account"}
         </button>
       </form>
 
       <p className="text-center text-xs text-neutral-500 mt-6">
         Already have an account?{" "}
-        <Link href="/login" className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors">
+        <Link href="/login" className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
           Sign in
         </Link>
       </p>
