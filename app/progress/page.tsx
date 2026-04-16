@@ -120,39 +120,27 @@ function getLast14Days(sessions: PomodoroSession[]): DayStat[] {
   return Object.values(map);
 }
 
-// ─── Custom tooltip ───────────────────────────────────────────────────────────
+// ─── Tooltip style helper (uses built-in Recharts tooltip, no custom component) ─
 
-function CustomTooltip({
-  active, payload, label, dark,
-}: {
-  active?: boolean;
-  payload?: ReadonlyArray<{ name?: string; value?: unknown; color?: string }>;
-  label?: string;
-  dark: boolean;
-}) {
+function tooltipStyle(dark: boolean) {
   const t = chartTokens(dark);
-  if (!active || !payload?.length) return null;
-  return (
-    <div
-      style={{
-        background: t.tooltipBg,
-        border: `1px solid ${t.tooltipBdr}`,
-        borderRadius: 12,
-        padding: "10px 14px",
-        fontSize: 13,
-        boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
-      }}
-    >
-      <p style={{ fontWeight: 600, marginBottom: 4, color: dark ? "#f5f5f5" : "#171717" }}>
-        {label}
-      </p>
-      {payload.map((p) => (
-        <p key={String(p.name)} style={{ color: String(p.color ?? "#aaa"), margin: 0 }}>
-          {p.name}: <span style={{ fontWeight: 600 }}>{String(p.value)}</span>
-        </p>
-      ))}
-    </div>
-  );
+  return {
+    contentStyle: {
+      background: t.tooltipBg,
+      border: `1px solid ${t.tooltipBdr}`,
+      borderRadius: 12,
+      fontSize: 13,
+      boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
+    },
+    labelStyle: {
+      fontWeight: 600,
+      color: dark ? "#f5f5f5" : "#171717",
+      marginBottom: 4,
+    },
+    itemStyle: {
+      color: dark ? "#d4d4d4" : "#404040",
+    },
+  };
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -267,7 +255,7 @@ export default function ProgressPage() {
                   <XAxis {...xAxisProps} />
                   <YAxis {...yAxisProps} />
                   <Tooltip
-                    content={(props) => <CustomTooltip {...props} dark={dark} />}
+                    {...tooltipStyle(dark)}
                     cursor={{ fill: t.cursor }}
                   />
                   <Bar dataKey="sessions" name="Sessions" fill="#6366f1" radius={[4, 4, 0, 0]} />
@@ -288,9 +276,7 @@ export default function ProgressPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke={t.grid} vertical={false} />
                   <XAxis {...xAxisProps} />
                   <YAxis {...yAxisProps} />
-                  <Tooltip
-                    content={(props) => <CustomTooltip {...props} dark={dark} />}
-                  />
+                  <Tooltip {...tooltipStyle(dark)} />
                   <Line
                     type="monotone"
                     dataKey="minutes"
