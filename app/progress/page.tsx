@@ -21,9 +21,7 @@ import {
   CartesianGrid,
   LineChart,
   Line,
-  type TooltipProps,
 } from "recharts";
-import type { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -126,7 +124,12 @@ function getLast14Days(sessions: PomodoroSession[]): DayStat[] {
 
 function CustomTooltip({
   active, payload, label, dark,
-}: TooltipProps<ValueType, NameType> & { dark: boolean }) {
+}: {
+  active?: boolean;
+  payload?: ReadonlyArray<{ name?: string; value?: unknown; color?: string }>;
+  label?: string;
+  dark: boolean;
+}) {
   const t = chartTokens(dark);
   if (!active || !payload?.length) return null;
   return (
@@ -143,9 +146,9 @@ function CustomTooltip({
       <p style={{ fontWeight: 600, marginBottom: 4, color: dark ? "#f5f5f5" : "#171717" }}>
         {label}
       </p>
-      {(payload as any[]).map((p) => (
+      {payload.map((p) => (
         <p key={String(p.name)} style={{ color: String(p.color ?? "#aaa"), margin: 0 }}>
-          {p.name}: <span style={{ fontWeight: 600 }}>{p.value}</span>
+          {p.name}: <span style={{ fontWeight: 600 }}>{String(p.value)}</span>
         </p>
       ))}
     </div>
