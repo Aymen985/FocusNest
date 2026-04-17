@@ -211,7 +211,7 @@ export default function FlashcardsPage() {
 
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Number of cards � {cardCount}
+                Number of cards &mdash; {cardCount}
               </label>
               <input
                 type="range"
@@ -220,7 +220,7 @@ export default function FlashcardsPage() {
                 step={1}
                 value={cardCount}
                 onChange={(e) => setCardCount(Number(e.target.value))}
-                className="w-full accent-indigo-500"
+                className="w-full accent-emerald-500"
               />
               <div className="flex justify-between text-xs text-neutral-400 mt-1">
                 <span>5</span>
@@ -248,7 +248,7 @@ export default function FlashcardsPage() {
               {generating ? (
                 <>
                   <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                  Generating�
+                  Generating...
                 </>
               ) : (
                 "Generate flashcards"
@@ -271,7 +271,7 @@ export default function FlashcardsPage() {
                 disabled={currentIndex === 0}
                 className="px-5 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 text-sm text-neutral-700 dark:text-neutral-300 disabled:opacity-30 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
-                ? Prev
+                &larr; Prev
               </button>
               <button
                 onClick={() =>
@@ -280,7 +280,7 @@ export default function FlashcardsPage() {
                 disabled={currentIndex === cards.length - 1}
                 className="px-5 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 text-sm text-neutral-700 dark:text-neutral-300 disabled:opacity-30 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
-                Next ?
+                Next &rarr;
               </button>
             </div>
             {/* All cards list */}

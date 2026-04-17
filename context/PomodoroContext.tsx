@@ -3,7 +3,9 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import {
+  collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp,
+} from "firebase/firestore";
 
 export type Phase      = "focus" | "break";
 export type TreeType   = "oak" | "pine" | "cherry" | "cactus";
@@ -61,8 +63,31 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
   const [elapsed, setElapsed] = useState(0);
   const [currentTree, setCurrentTree] = useState<TreeType | null>(null);
   const [forestTrees, setForestTrees] = useState<ForestTree[]>([]);
-  const [loadingForest] = useState(false);
+  const [loadingForest, setLoadingForest] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+
+  // ── Load forest trees from Firestore on mount / when user changes ─────────
+  // This ensures trees are always shown after a page refresh.
+  const didLoad = useRef(false);
+  useEffect(() => {
+    if (!user || didLoad.current) return;
+    didLoad.current = true;
+    setLoadingForest(true);
+    getDocs(
+      query(
+        collection(db, "users", user.uid, "pomodoroSessions"),
+        orderBy("completedAt", "desc"),
+        limit(200),
+      ),
+    )
+      .then((snap) => {
+        setForestTrees(
+          snap.docs.map((d) => ({ id: d.id, ...d.data() } as ForestTree)),
+        );
+      })
+      .catch((e) => console.error("Failed to load forest:", e))
+      .finally(() => setLoadingForest(false));
+  }, [user]);
 
   // Timestamp-based timer refs — survive component unmount/remount on navigation
   const startedAtRef    = useRef<number | null>(null);

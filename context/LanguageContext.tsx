@@ -4,13 +4,27 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 
 export type Lang = "en" | "fr" | "ar" | "es" | "de";
 
-export const LANGUAGES: { code: Lang; label: string; nativeName: string; flag: string }[] = [
-  { code: "en", label: "English",  nativeName: "English",  flag: "🇬🇧" },
-  { code: "fr", label: "French",   nativeName: "Français", flag: "🇫🇷" },
-  { code: "ar", label: "Arabic",   nativeName: "العربية",  flag: "🇸🇦" },
-  { code: "es", label: "Spanish",  nativeName: "Español",  flag: "🇪🇸" },
-  { code: "de", label: "German",   nativeName: "Deutsch",  flag: "🇩🇪" },
+// Flag images via flagcdn.com — renders identically on all OS/browsers
+export const LANGUAGES: { code: Lang; label: string; nativeName: string; flag: string; countryCode: string }[] = [
+  { code: "en", label: "English",  nativeName: "English",  flag: "🇬🇧", countryCode: "gb" },
+  { code: "fr", label: "French",   nativeName: "Français", flag: "🇫🇷", countryCode: "fr" },
+  { code: "ar", label: "Arabic",   nativeName: "العربية",  flag: "🇸🇦", countryCode: "sa" },
+  { code: "es", label: "Spanish",  nativeName: "Español",  flag: "🇪🇸", countryCode: "es" },
+  { code: "de", label: "German",   nativeName: "Deutsch",  flag: "🇩🇪", countryCode: "de" },
 ];
+
+// Consistent flag image component — uses flagcdn.com, works on all platforms
+export function FlagImg({ countryCode, className = "w-5 h-3.5" }: { countryCode: string; className?: string }) {
+  return (
+    <img
+      src={`https://flagcdn.com/w40/${countryCode}.png`}
+      srcSet={`https://flagcdn.com/w80/${countryCode}.png 2x`}
+      alt={countryCode}
+      className={`${className} object-cover rounded-sm inline-block shrink-0`}
+      loading="lazy"
+    />
+  );
+}
 
 export interface Translations {
   // Nav

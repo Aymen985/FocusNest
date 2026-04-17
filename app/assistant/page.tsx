@@ -17,8 +17,11 @@ export default function AssistantPage() {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [docContext, setDocContext] = useState(true);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -29,6 +32,26 @@ export default function AssistantPage() {
     if (!el) return;
     el.style.height = "auto";
     el.style.height = Math.min(el.scrollHeight, 160) + "px";
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadedFile(file);
+    // Notify user the file is attached
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "assistant",
+        content: `File attached: **${file.name}** (${(file.size / 1024).toFixed(1)} KB). I'll use this as context for your questions.`,
+      },
+    ]);
+    // Reset input so same file can be re-selected
+    e.target.value = "";
+  };
+
+  const removeFile = () => {
+    setUploadedFile(null);
   };
 
   const send = async (e?: FormEvent) => {
@@ -45,6 +68,30 @@ export default function AssistantPage() {
 
     try {
       const token = await auth.currentUser?.getIdToken();
+
+      // If file attached, upload it first via the documents API, then send
+      let docId: string | undefined;
+      if (uploadedFile) {
+        setUploading(true);
+        try {
+          const formData = new FormData();
+          formData.append("file", uploadedFile);
+          const upRes = await fetch("/api/documents/upload", {
+            method: "POST",
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            body: formData,
+          });
+          if (upRes.ok) {
+            const upData = await upRes.json();
+            docId = upData.docId;
+          }
+        } catch (err) {
+          console.error("Upload failed:", err);
+        } finally {
+          setUploading(false);
+        }
+      }
+
       const res = await fetch("/api/assistant", {
         method: "POST",
         headers: {
@@ -54,8 +101,8 @@ export default function AssistantPage() {
         body: JSON.stringify({
           message: text,
           useDocContext: docContext,
-          // Pass conversation history (excluding the latest user message we just added)
           history: messages.map((m) => ({ role: m.role, content: m.content })),
+          ...(docId ? { docId } : {}),
         }),
       });
 
@@ -115,6 +162,15 @@ export default function AssistantPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] bg-neutral-50 dark:bg-neutral-950">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.doc,.docx,.txt"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
         <div>
@@ -171,7 +227,7 @@ export default function AssistantPage() {
             </p>
             <p className="text-sm text-neutral-400 dark:text-neutral-600 max-w-sm">
               Ask questions about your notes, get explanations, or quiz yourself
-              on any topic.
+              on any topic. You can also upload a file directly below.
             </p>
             <div className="flex flex-wrap gap-2 mt-6 justify-center">
               {quickPrompts.map((p) => (
@@ -223,12 +279,46 @@ export default function AssistantPage() {
         <div ref={bottomRef} />
       </div>
 
+      {/* Attached file indicator */}
+      {uploadedFile && (
+        <div className="px-4 sm:px-6 py-2 bg-emerald-50 dark:bg-emerald-950/50 border-t border-emerald-200 dark:border-emerald-800">
+          <div className="flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-400">
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+            </svg>
+            <span className="truncate font-medium">{uploadedFile.name}</span>
+            <button
+              onClick={removeFile}
+              className="ml-auto shrink-0 text-emerald-500 hover:text-red-500 transition-colors"
+              title="Remove file"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Input */}
       <div className="px-4 sm:px-6 pb-6 pt-3 border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
         <form
           onSubmit={send}
-          className="flex items-end gap-2 bg-neutral-100 dark:bg-neutral-800 rounded-2xl px-4 py-2"
+          className="flex items-end gap-2 bg-neutral-100 dark:bg-neutral-800 rounded-2xl px-3 py-2"
         >
+          {/* Upload button */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={streaming}
+            title="Attach a document (PDF, DOCX, TXT)"
+            className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-neutral-400 hover:text-emerald-500 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors disabled:opacity-40"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+            </svg>
+          </button>
+
           <textarea
             ref={textareaRef}
             value={input}
@@ -263,7 +353,7 @@ export default function AssistantPage() {
           </button>
         </form>
         <p className="text-center text-xs text-neutral-400 mt-2">
-          Enter to send &middot; Shift+Enter for new line
+          Enter to send &middot; Shift+Enter for new line &middot; paperclip to attach a file
         </p>
       </div>
     </div>

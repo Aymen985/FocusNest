@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useGuest, GUEST_ALLOWED } from "@/context/GuestContext";
-import { useLanguage, LANGUAGES } from "@/context/LanguageContext";
+import { useLanguage, LANGUAGES, FlagImg } from "@/context/LanguageContext";
 import { usePomodoroContext } from "@/context/PomodoroContext";
 import { getAvatar } from "@/components/avatars";
 
@@ -29,17 +29,100 @@ function NavIcon({ d }: { d: string }) {
   );
 }
 
+// ── Language dropdown — a proper top-level component, not a nested function ──
+// This avoids the re-mount bug that broke the desktop language switcher.
+interface LangDropdownProps {
+  lang: string;
+  setLang: (l: any) => void;
+  isDark: boolean;
+  toggleTheme: () => void;
+}
+
+function SidebarLanguageBlock({ lang, setLang, isDark, toggleTheme }: LangDropdownProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const currentLang = LANGUAGES.find((l) => l.code === lang) ?? LANGUAGES[0];
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div className="p-2 border-t border-neutral-200 dark:border-neutral-800 space-y-0.5 shrink-0">
+      {/* Language picker */}
+      <div ref={ref} className="relative">
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+        >
+          <FlagImg countryCode={currentLang.countryCode} />
+          <span className="flex-1 text-left truncate">{currentLang.nativeName}</span>
+          <svg
+            className={`w-3 h-3 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {open && (
+          <div className="absolute bottom-full left-0 right-0 mb-1 z-50 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-xl overflow-hidden">
+            {LANGUAGES.map((l) => (
+              <button
+                key={l.code}
+                onClick={() => { setLang(l.code); setOpen(false); }}
+                className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors ${
+                  lang === l.code
+                    ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-medium"
+                    : "text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                }`}
+              >
+                <FlagImg countryCode={l.countryCode} />
+                <span>{l.nativeName}</span>
+                {lang === l.code && (
+                  <svg className="w-3.5 h-3.5 ml-auto text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Theme toggle */}
+      <button
+        onClick={toggleTheme}
+        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+      >
+        {isDark ? (
+          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m8.66-9h-1M4.34 12h-1m15.07-6.07-.7.7M6.34 17.66l-.7.7m12.02 0-.7-.7M6.34 6.34l-.7-.7M12 5a7 7 0 100 14 7 7 0 000-14z" />
+          </svg>
+        ) : (
+          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+          </svg>
+        )}
+        <span>{isDark ? "Light mode" : "Dark mode"}</span>
+      </button>
+    </div>
+  );
+}
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router   = useRouter();
   const { user, userProfile, logout, loading } = useAuth();
   const { isGuest } = useGuest();
   const { t, lang, setLang } = useLanguage();
-  const langRef = useRef<HTMLDivElement>(null);
 
   const [sidebarOpen,        setSidebarOpen]        = useState(true);
   const [isDark,             setIsDark]             = useState(false);
-  const [showLangMenu,       setShowLangMenu]       = useState(false);
   const [showLogoutConfirm,  setShowLogoutConfirm]  = useState(false);
   const [mobileOpen,         setMobileOpen]         = useState(false);
 
@@ -52,15 +135,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setIsDark(document.documentElement.classList.contains("dark"));
-  }, []);
-
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (langRef.current && !langRef.current.contains(e.target as Node))
-        setShowLangMenu(false);
-    }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   useEffect(() => { setMobileOpen(false); }, [pathname]);
@@ -85,17 +159,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     router.push("/login");
   }
 
-  const currentLang = LANGUAGES.find((l) => l.code === lang) ?? LANGUAGES[0];
-
   // Auth pages: no shell
   const authPaths = ["/login", "/signup", "/reset-password"];
   if (authPaths.some((p) => pathname.startsWith(p))) return <>{children}</>;
 
-  // ── Sidebar inner content (reused for desktop + mobile) ─────────────────
-  function SidebarContent() {
+  // ── Sidebar nav content — no state, no refs, safe to be a nested function ──
+  function SidebarNav() {
     return (
       <div className="flex flex-col h-full w-56 min-w-[14rem]">
-
         {/* User info */}
         {user && (
           <div className="px-4 py-3 border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-3 shrink-0">
@@ -142,54 +213,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        {/* Language + theme */}
-        <div className="p-2 border-t border-neutral-200 dark:border-neutral-800 space-y-0.5 shrink-0">
-          <div ref={langRef} className="relative">
-            <button onClick={() => setShowLangMenu((v) => !v)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
-              <span className="text-base shrink-0">{currentLang.flag}</span>
-              <span className="flex-1 text-left truncate">{currentLang.nativeName}</span>
-              <svg className={`w-3 h-3 shrink-0 transition-transform ${showLangMenu ? "rotate-180" : ""}`}
-                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            {showLangMenu && (
-              <div className="absolute bottom-full left-0 right-0 mb-1 z-50 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-xl overflow-hidden">
-                {LANGUAGES.map((l) => (
-                  <button key={l.code} onClick={() => { setLang(l.code); setShowLangMenu(false); }}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors ${
-                      lang === l.code
-                        ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-medium"
-                        : "text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                    }`}>
-                    <span>{l.flag}</span>
-                    <span>{l.nativeName}</span>
-                    {lang === l.code && (
-                      <svg className="w-3.5 h-3.5 ml-auto text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <button onClick={toggleTheme}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
-            {isDark ? (
-              <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m8.66-9h-1M4.34 12h-1m15.07-6.07-.7.7M6.34 17.66l-.7.7m12.02 0-.7-.7M6.34 6.34l-.7-.7M12 5a7 7 0 100 14 7 7 0 000-14z" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
-              </svg>
-            )}
-            <span>{isDark ? "Light mode" : "Dark mode"}</span>
-          </button>
-        </div>
+        {/* Language + theme block — proper named component, stable across renders */}
+        <SidebarLanguageBlock
+          lang={lang}
+          setLang={setLang}
+          isDark={isDark}
+          toggleTheme={toggleTheme}
+        />
 
         {/* Motivational card */}
         <div className="mx-3 mb-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 shrink-0">
@@ -203,11 +233,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen bg-white dark:bg-neutral-950 overflow-hidden">
 
-      {/* ── Desktop sidebar: w-56 when open, w-0 when closed ────────────────── */}
+      {/* ── Desktop sidebar ──────────────────────────────────────────────────── */}
       <aside className={`hidden lg:block bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
         sidebarOpen ? "w-56" : "w-0"
       }`}>
-        <SidebarContent />
+        <SidebarNav />
       </aside>
 
       {/* ── Mobile overlay sidebar ───────────────────────────────────────────── */}
@@ -218,16 +248,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <aside className={`lg:hidden fixed inset-y-0 left-0 z-50 flex flex-col w-64 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 transition-transform duration-300 ${
         mobileOpen ? "translate-x-0" : "-translate-x-full"
       }`}>
-        <SidebarContent />
+        <SidebarNav />
       </aside>
 
       {/* ── Main area ────────────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
 
-        {/* Header — logo + FocusNest always visible here */}
+        {/* Header */}
         <header className="flex items-center h-14 px-3 sm:px-4 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shrink-0 gap-2">
 
-          {/* Desktop toggle: chevron-left when open, hamburger when closed */}
+          {/* Desktop sidebar toggle */}
           <button
             onClick={() => setSidebarOpen((v) => !v)}
             className="hidden lg:flex w-9 h-9 items-center justify-center rounded-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-800 dark:hover:text-neutral-200 transition-colors shrink-0"
@@ -253,19 +283,18 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </svg>
           </button>
 
-          {/* Logo — always visible regardless of sidebar state */}
+          {/* Logo */}
           <Link href="/" className="flex items-center gap-2 shrink-0">
             <img src="/icon.png" alt="" className="w-7 h-7 object-contain" />
             <span className="font-bold text-sm text-neutral-900 dark:text-neutral-50">FocusNest</span>
           </Link>
 
-          {/* Separator + page name */}
           <span className="text-neutral-300 dark:text-neutral-600 hidden sm:block">/</span>
           <span className="text-sm font-medium text-neutral-600 dark:text-neutral-300 hidden sm:block capitalize truncate">
             {pathname === "/" ? "Home" : pathname.slice(1).replace(/-/g, " ")}
           </span>
 
-          {/* Profile + Logout — always top-right */}
+          {/* Profile + Logout */}
           <div className="ml-auto flex items-center gap-2 shrink-0">
             {!loading && (
               <>

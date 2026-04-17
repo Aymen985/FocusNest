@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useGuest } from "@/context/GuestContext";
-import { usePomodoroContext } from "@/context/PomodoroContext";
+import { usePomodoroContext, type GrowthStage, type TreeType, type ForestTree } from "@/context/PomodoroContext";
 import { useLanguage } from "@/context/LanguageContext";
 import LoadingScreen from "@/components/LoadingScreen";
 import Link from "next/link";
@@ -19,6 +19,98 @@ function getGreeting(t: {
   if (h < 12) return t.page_dashboard_greeting_morning;
   if (h < 18) return t.page_dashboard_greeting_afternoon;
   return t.page_dashboard_greeting_evening;
+}
+
+// ── SVG Mini Trees (same design as pomodoro page) ─────────────────────────────
+function MiniOak({ dead }: { dead?: boolean }) {
+  return (
+    <svg viewBox="0 0 60 72" className="w-full h-full">
+      <ellipse cx="30" cy="66" rx="18" ry="4" fill={dead ? "#52525b" : "#5c3d1e"} opacity="0.3"/>
+      <rect x="27" y="38" width="6" height="28" rx="3" fill={dead ? "#52525b" : "#7c4f28"}/>
+      <ellipse cx="30" cy="28" rx="18" ry="16" fill={dead ? "#3f3f46" : "#15803d"}/>
+      <ellipse cx="18" cy="34" rx="13" ry="10" fill={dead ? "#27272a" : "#166534"}/>
+      <ellipse cx="42" cy="34" rx="13" ry="10" fill={dead ? "#27272a" : "#166534"}/>
+      <ellipse cx="30" cy="22" rx="14" ry="12" fill={dead ? "#52525b" : "#22c55e"}/>
+    </svg>
+  );
+}
+function MiniPine({ dead }: { dead?: boolean }) {
+  return (
+    <svg viewBox="0 0 60 72" className="w-full h-full">
+      <ellipse cx="30" cy="66" rx="14" ry="3" fill={dead ? "#52525b" : "#5c3d1e"} opacity="0.3"/>
+      <rect x="27" y="50" width="6" height="16" rx="3" fill={dead ? "#52525b" : "#7c4f28"}/>
+      <polygon points="30,8 14,50 46,50" fill={dead ? "#27272a" : "#15803d"}/>
+      <polygon points="30,18 16,44 44,44" fill={dead ? "#3f3f46" : "#16a34a"}/>
+      <polygon points="30,28 18,40 42,40" fill={dead ? "#52525b" : "#22c55e"}/>
+      <polygon points="30,8 18,28 42,28" fill={dead ? "#71717a" : "#4ade80"}/>
+    </svg>
+  );
+}
+function MiniCherry({ dead }: { dead?: boolean }) {
+  return (
+    <svg viewBox="0 0 60 72" className="w-full h-full">
+      <ellipse cx="30" cy="66" rx="16" ry="4" fill={dead ? "#52525b" : "#5c3d1e"} opacity="0.3"/>
+      <path d="M30,65 Q28,50 30,38" stroke={dead ? "#52525b" : "#92400e"} strokeWidth="5" fill="none" strokeLinecap="round"/>
+      <circle cx="18" cy="28" r="12" fill={dead ? "#3f3f46" : "#fbcfe8"}/>
+      <circle cx="42" cy="28" r="12" fill={dead ? "#3f3f46" : "#fbcfe8"}/>
+      <circle cx="30" cy="22" r="14" fill={dead ? "#52525b" : "#fce7f3"}/>
+      {!dead && <><circle cx="22" cy="20" r="2" fill="#fda4af"/><circle cx="36" cy="24" r="2" fill="#fda4af"/><circle cx="30" cy="14" r="2" fill="#fda4af"/></>}
+    </svg>
+  );
+}
+function MiniCactus({ dead }: { dead?: boolean }) {
+  return (
+    <svg viewBox="0 0 60 72" className="w-full h-full">
+      <ellipse cx="30" cy="66" rx="14" ry="3" fill={dead ? "#52525b" : "#92400e"} opacity="0.3"/>
+      <rect x="26" y="24" width="8" height="42" rx="4" fill={dead ? "#52525b" : "#65a30d"}/>
+      <rect x="34" y="34" width="12" height="6" rx="3" fill={dead ? "#52525b" : "#65a30d"}/>
+      <rect x="38" y="28" width="6" height="14" rx="3" fill={dead ? "#52525b" : "#65a30d"}/>
+      <rect x="14" y="40" width="12" height="6" rx="3" fill={dead ? "#52525b" : "#65a30d"}/>
+      <rect x="16" y="32" width="6" height="16" rx="3" fill={dead ? "#52525b" : "#65a30d"}/>
+      <ellipse cx="30" cy="22" rx="6" ry="7" fill={dead ? "#3f3f46" : "#65a30d"}/>
+      {!dead && <circle cx="30" cy="16" r="4" fill="#fbbf24"/>}
+    </svg>
+  );
+}
+function MiniDead() {
+  return (
+    <svg viewBox="0 0 60 72" className="w-full h-full">
+      <ellipse cx="30" cy="66" rx="14" ry="3" fill="#52525b" opacity="0.25"/>
+      <rect x="27" y="36" width="6" height="30" rx="3" fill="#52525b"/>
+      <line x1="30" y1="44" x2="15" y2="32" stroke="#52525b" strokeWidth="3" strokeLinecap="round"/>
+      <line x1="30" y1="44" x2="45" y2="34" stroke="#52525b" strokeWidth="3" strokeLinecap="round"/>
+      <line x1="30" y1="52" x2="18" y2="42" stroke="#52525b" strokeWidth="2.5" strokeLinecap="round"/>
+      <line x1="30" y1="52" x2="42" y2="44" stroke="#52525b" strokeWidth="2.5" strokeLinecap="round"/>
+      <line x1="15" y1="32" x2="9" y2="22" stroke="#52525b" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="45" y1="34" x2="51" y2="24" stroke="#52525b" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function TreeIcon({ treeType, dead }: { treeType: string; dead?: boolean }) {
+  if (dead || treeType === "dead") return <MiniDead />;
+  switch (treeType) {
+    case "pine":   return <MiniPine />;
+    case "cherry": return <MiniCherry />;
+    case "cactus": return <MiniCactus />;
+    default:       return <MiniOak />;
+  }
+}
+
+// Growing tree inside the timer ring (stage 0-4 same as pomodoro page)
+function GrowingOak({ stage }: { stage: GrowthStage }) {
+  const s = stage;
+  return (
+    <svg viewBox="0 0 120 140" className="w-full h-full" style={{ overflow: "visible" }}>
+      <ellipse cx="60" cy="132" rx="38" ry="7" fill="#5c3d1e" opacity="0.35"/>
+      {s >= 1 && <rect x="55" y={s === 1 ? 100 : s === 2 ? 90 : s === 3 ? 78 : 72} width={s <= 2 ? 10 : 12} height={s === 1 ? 32 : s === 2 ? 42 : s === 3 ? 54 : 60} rx="5" fill="#7c4f28"/>}
+      {s === 0 && <ellipse cx="60" cy="118" rx="9" ry="12" fill="#8B6914" className="animate-pulse"/>}
+      {s === 1 && <><ellipse cx="60" cy="95" rx="14" ry="12" fill="#4ade80"/><ellipse cx="48" cy="100" rx="10" ry="8" fill="#22c55e"/><ellipse cx="72" cy="100" rx="10" ry="8" fill="#22c55e"/></>}
+      {s === 2 && <><ellipse cx="60" cy="82" rx="22" ry="18" fill="#22c55e"/><ellipse cx="44" cy="90" rx="16" ry="13" fill="#16a34a"/><ellipse cx="76" cy="90" rx="16" ry="13" fill="#16a34a"/><ellipse cx="60" cy="78" rx="18" ry="14" fill="#4ade80"/></>}
+      {s === 3 && <><ellipse cx="60" cy="68" rx="30" ry="26" fill="#16a34a"/><ellipse cx="38" cy="80" rx="22" ry="18" fill="#15803d"/><ellipse cx="82" cy="80" rx="22" ry="18" fill="#15803d"/><ellipse cx="60" cy="62" rx="26" ry="22" fill="#22c55e"/></>}
+      {s === 4 && <><ellipse cx="60" cy="58" rx="38" ry="32" fill="#15803d"/><ellipse cx="32" cy="72" rx="28" ry="22" fill="#166534"/><ellipse cx="88" cy="72" rx="28" ry="22" fill="#166534"/><ellipse cx="60" cy="50" rx="32" ry="28" fill="#22c55e"/><ellipse cx="60" cy="44" rx="24" ry="20" fill="#86efac"/></>}
+    </svg>
+  );
 }
 
 // ── Mini Pomodoro card ────────────────────────────────────────────────────────
@@ -38,10 +130,6 @@ function HomePomodoroCard() {
     ? focusProgress
     : isRunning ? 1 - secondsLeft / (breakMins * 60) : 0;
   const dash = CIRC * Math.min(Math.max(progress, 0), 1);
-
-  const treeEmoji = currentTree
-    ? ["🌱", "🌿", "🌲", "🌳", "🌳"][growthStage]
-    : "🌱";
 
   return (
     <div className="bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 flex flex-col gap-4">
@@ -71,7 +159,7 @@ function HomePomodoroCard() {
         </span>
       </div>
 
-      {/* Timer ring */}
+      {/* Timer ring with SVG tree inside */}
       <div className="flex justify-center">
         <div className="relative w-44 h-44">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 160 160">
@@ -85,7 +173,16 @@ function HomePomodoroCard() {
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-            <span className="text-3xl">{treeEmoji}</span>
+            {/* SVG growing tree — same design as pomodoro page */}
+            <div className="w-10 h-10">
+              {phase === "focus" ? (
+                <GrowingOak stage={growthStage} />
+              ) : (
+                <svg viewBox="0 0 60 60" className="w-full h-full">
+                  <text x="30" y="40" textAnchor="middle" fontSize="36">&#127769;</text>
+                </svg>
+              )}
+            </div>
             <span className="text-3xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
               {mins}:{secs}
             </span>
@@ -134,38 +231,41 @@ function HomePomodoroCard() {
   );
 }
 
-// ── Mini Forest card ──────────────────────────────────────────────────────────
+// ── Mini Forest card — uses SVG trees consistent with forest/pomodoro pages ───
 function HomeForestCard() {
-  const { forestTrees } = usePomodoroContext();
-  const completed = forestTrees.filter((t) => t.status !== "abandoned").slice(0, 6);
-  const treeEmoji: Record<string, string> = {
-    oak: "🌳", pine: "🌲", cherry: "🌸", cactus: "🌵", dead: "🪨",
-  };
+  const { forestTrees, loadingForest } = usePomodoroContext();
+  const recent = forestTrees.slice(0, 6);
 
   return (
     <div className="bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5">
       <div className="flex items-center justify-between mb-3">
         <div>
           <h2 className="font-semibold text-neutral-900 dark:text-neutral-100 text-sm">Focus Forest</h2>
-          <p className="text-xs text-neutral-500">{completed.length} / 6 cycles completed today</p>
+          <p className="text-xs text-neutral-500">
+            {recent.filter((t) => t.status !== "abandoned").length} / 6 cycles completed today
+          </p>
         </div>
-        <Link href="/forest"
-          className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline">
+        <Link href="/forest" className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline">
           View Progress
         </Link>
       </div>
       <div className="flex flex-wrap gap-2 mb-2 min-h-[48px] items-center">
-        {completed.length === 0 ? (
+        {loadingForest ? (
+          <div className="w-4 h-4 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+        ) : recent.length === 0 ? (
           <p className="text-xs text-neutral-400">No trees yet &mdash; start a session!</p>
         ) : (
-          completed.map((tree) => (
-            <span key={tree.id} className="text-3xl" title={tree.label}>
-              {treeEmoji[tree.treeType] ?? "🌳"}
-            </span>
-          ))
+          recent.map((tree) => {
+            const isDead = tree.status === "abandoned" || tree.completed === false || tree.treeType === "dead";
+            return (
+              <div key={tree.id} className={`w-10 h-10 shrink-0 ${isDead ? "opacity-40 grayscale" : ""}`} title={tree.label || tree.treeType}>
+                <TreeIcon treeType={tree.treeType} dead={isDead} />
+              </div>
+            );
+          })
         )}
       </div>
-      {completed.length > 0 && (
+      {recent.filter((t) => t.status !== "abandoned").length > 0 && (
         <p className="text-xs text-neutral-500">Excellent work! Your forest is growing.</p>
       )}
     </div>
@@ -178,6 +278,8 @@ function HomeAssistantCard() {
   const [input,     setInput]     = useState("");
   const [messages,  setMessages]  = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [streaming, setStreaming] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
 
   if (!user) {
     return (
@@ -190,13 +292,19 @@ function HomeAssistantCard() {
         <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-3">AI Study Assistant</p>
         <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">How can I help you study today?</h3>
         <p className="text-sm text-neutral-500 mb-6">Sign in to explain, plan, quiz, or get unstuck.</p>
-        <Link href="/login"
-          className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-xl transition-colors">
+        <Link href="/login" className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-xl transition-colors">
           Sign in to unlock
         </Link>
       </div>
     );
   }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAttachedFile(file);
+    e.target.value = "";
+  };
 
   const sendMessage = async () => {
     const text = input.trim();
@@ -235,6 +343,7 @@ function HomeAssistantCard() {
           return u;
         });
       }
+      setAttachedFile(null);
     } catch {
       setMessages((p) => [...p, { role: "assistant", content: "Sorry, something went wrong." }]);
     } finally {
@@ -246,6 +355,9 @@ function HomeAssistantCard() {
 
   return (
     <div className="bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl flex flex-col h-full min-h-[480px]">
+      {/* Hidden file input */}
+      <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.txt" className="hidden" onChange={handleFileChange} />
+
       {/* Header */}
       <div className="p-5 border-b border-neutral-200 dark:border-neutral-800">
         <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-2 mb-2">
@@ -286,6 +398,21 @@ function HomeAssistantCard() {
         ))}
       </div>
 
+      {/* Attached file indicator */}
+      {attachedFile && (
+        <div className="px-4 py-1.5 bg-emerald-50 dark:bg-emerald-950/50 border-t border-emerald-200 dark:border-emerald-800 flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-400">
+          <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+          </svg>
+          <span className="truncate">{attachedFile.name}</span>
+          <button onClick={() => setAttachedFile(null)} className="ml-auto shrink-0 hover:text-red-500 transition-colors">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Input */}
       <div className="p-4 border-t border-neutral-200 dark:border-neutral-800">
         {messages.length === 0 && (
@@ -298,7 +425,18 @@ function HomeAssistantCard() {
             ))}
           </div>
         )}
-        <div className="flex items-center gap-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl px-4 py-2">
+        <div className="flex items-center gap-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl px-3 py-2">
+          {/* Upload button */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            title="Attach a document"
+            className="w-6 h-6 flex items-center justify-center shrink-0 text-neutral-400 hover:text-emerald-500 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+            </svg>
+          </button>
           <input
             type="text"
             value={input}
@@ -318,7 +456,7 @@ function HomeAssistantCard() {
           </button>
         </div>
         <p className="text-center text-[10px] text-neutral-400 mt-1.5">
-          Shift + Enter for new line
+          Enter to send &middot; paperclip to attach a file
         </p>
       </div>
     </div>
