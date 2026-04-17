@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { useGuest } from "@/context/GuestContext";
+
 import { usePomodoroContext, type GrowthStage, type TreeType, type ForestTree } from "@/context/PomodoroContext";
 import { useLanguage } from "@/context/LanguageContext";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -281,24 +281,6 @@ function HomeAssistantCard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
 
-  if (!user) {
-    return (
-      <div className="bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-8 flex flex-col items-center justify-center h-full min-h-[400px] text-center">
-        <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-center mb-4">
-          <svg className="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-          </svg>
-        </div>
-        <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-3">AI Study Assistant</p>
-        <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">How can I help you study today?</h3>
-        <p className="text-sm text-neutral-500 mb-6">Sign in to explain, plan, quiz, or get unstuck.</p>
-        <Link href="/login" className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-xl transition-colors">
-          Sign in to unlock
-        </Link>
-      </div>
-    );
-  }
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -466,16 +448,15 @@ function HomeAssistantCard() {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function HomePage() {
   const { user, loading, userProfile } = useAuth();
-  const { isGuest, hasVisited } = useGuest();
   const router = useRouter();
   const { t } = useLanguage();
 
   useEffect(() => {
-    if (!loading && !user && !isGuest && hasVisited) router.push("/login");
-  }, [user, loading, isGuest, hasVisited, router]);
+    if (!loading && !user) router.push("/login");
+  }, [user, loading, router]);
 
   if (loading) return <LoadingScreen />;
-  if (!user && !isGuest) return null;
+  if (!user) return null;
 
   const firstName = userProfile?.firstName ?? user?.email?.split("@")[0] ?? "there";
   const greeting  = getGreeting(t);
@@ -488,17 +469,7 @@ export default function HomePage() {
           {greeting}, {firstName}!
         </h1>
         <p className="text-sm text-neutral-500 mt-0.5">
-          {isGuest ? (
-            <>
-              Browsing as guest.{" "}
-              <Link href="/login" className="text-emerald-600 dark:text-emerald-400 underline font-medium">
-                Sign in
-              </Link>{" "}
-              for full access.
-            </>
-          ) : (
-            "Ready to focus? Let's make it count."
-          )}
+          Ready to focus? Let&apos;s make it count.
         </p>
       </div>
 

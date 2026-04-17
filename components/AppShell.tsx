@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { useGuest, GUEST_ALLOWED } from "@/context/GuestContext";
 import { useLanguage, LANGUAGES, FlagImg } from "@/context/LanguageContext";
 import { usePomodoroContext } from "@/context/PomodoroContext";
 import { getAvatar } from "@/components/avatars";
@@ -29,8 +28,6 @@ function NavIcon({ d }: { d: string }) {
   );
 }
 
-// ── Language dropdown — a proper top-level component, not a nested function ──
-// This avoids the re-mount bug that broke the desktop language switcher.
 interface LangDropdownProps {
   lang: string;
   setLang: (l: any) => void;
@@ -53,7 +50,6 @@ function SidebarLanguageBlock({ lang, setLang, isDark, toggleTheme }: LangDropdo
 
   return (
     <div className="p-2 border-t border-neutral-200 dark:border-neutral-800 space-y-0.5 shrink-0">
-      {/* Language picker */}
       <div ref={ref} className="relative">
         <button
           onClick={() => setOpen((v) => !v)}
@@ -94,7 +90,6 @@ function SidebarLanguageBlock({ lang, setLang, isDark, toggleTheme }: LangDropdo
         )}
       </div>
 
-      {/* Theme toggle */}
       <button
         onClick={toggleTheme}
         className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
@@ -118,13 +113,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router   = useRouter();
   const { user, userProfile, logout, loading } = useAuth();
-  const { isGuest } = useGuest();
   const { t, lang, setLang } = useLanguage();
 
-  const [sidebarOpen,        setSidebarOpen]        = useState(true);
-  const [isDark,             setIsDark]             = useState(false);
-  const [showLogoutConfirm,  setShowLogoutConfirm]  = useState(false);
-  const [mobileOpen,         setMobileOpen]         = useState(false);
+  const [sidebarOpen,       setSidebarOpen]       = useState(true);
+  const [isDark,            setIsDark]            = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [mobileOpen,        setMobileOpen]        = useState(false);
 
   let isActive = false;
   try {
@@ -163,10 +157,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const authPaths = ["/login", "/signup", "/reset-password"];
   if (authPaths.some((p) => pathname.startsWith(p))) return <>{children}</>;
 
-  // ── Sidebar nav content — no state, no refs, safe to be a nested function ──
+  // Redirect unauthenticated users to login
+  if (!loading && !user) {
+    router.push("/login");
+    return null;
+  }
+
   function SidebarNav() {
     return (
       <div className="flex flex-col h-full w-56 min-w-[14rem]">
+
         {/* User info */}
         {user && (
           <div className="px-4 py-3 border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-3 shrink-0">
@@ -192,19 +192,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {/* Nav links */}
         <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
           {NAV_LINKS.map(({ href, label, icon, dot }) => {
-            const blocked = isGuest && !GUEST_ALLOWED.includes(href);
-            const dest    = blocked ? `/login?reason=guest` : href;
-            const active  = pathname === href;
+            const active = pathname === href;
             return (
-              <Link key={href} href={dest}
+              <Link key={href} href={href}
                 className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
                   active
                     ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-medium"
                     : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                } ${blocked ? "opacity-50" : ""}`}>
+                }`}>
                 <NavIcon d={icon} />
                 <span className="truncate">{t[label]}</span>
-                {blocked && <span className="ml-auto text-[9px]">&#128274;</span>}
                 {dot && isActive && (
                   <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                 )}
@@ -213,19 +210,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        {/* Language + theme block — proper named component, stable across renders */}
         <SidebarLanguageBlock
           lang={lang}
           setLang={setLang}
           isDark={isDark}
           toggleTheme={toggleTheme}
         />
-
-        {/* Motivational card */}
-        <div className="mx-3 mb-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 shrink-0">
-          <p className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">Stay Consistent.</p>
-          <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Achieve More.</p>
-        </div>
       </div>
     );
   }
@@ -233,14 +223,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen bg-white dark:bg-neutral-950 overflow-hidden">
 
-      {/* ── Desktop sidebar ──────────────────────────────────────────────────── */}
+      {/* Desktop sidebar */}
       <aside className={`hidden lg:block bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
         sidebarOpen ? "w-56" : "w-0"
       }`}>
         <SidebarNav />
       </aside>
 
-      {/* ── Mobile overlay sidebar ───────────────────────────────────────────── */}
+      {/* Mobile overlay */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40 bg-black/50"
           onClick={() => setMobileOpen(false)} />
@@ -251,13 +241,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <SidebarNav />
       </aside>
 
-      {/* ── Main area ────────────────────────────────────────────────────────── */}
+      {/* Main area */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
 
-        {/* Header */}
         <header className="flex items-center h-14 px-3 sm:px-4 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shrink-0 gap-2">
 
-          {/* Desktop sidebar toggle */}
           <button
             onClick={() => setSidebarOpen((v) => !v)}
             className="hidden lg:flex w-9 h-9 items-center justify-center rounded-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-800 dark:hover:text-neutral-200 transition-colors shrink-0"
@@ -273,7 +261,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </button>
 
-          {/* Mobile burger */}
           <button
             onClick={() => setMobileOpen((v) => !v)}
             className="lg:hidden w-9 h-9 flex items-center justify-center rounded-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
@@ -283,7 +270,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </svg>
           </button>
 
-          {/* Logo */}
           <Link href="/" className="flex items-center gap-2 shrink-0">
             <img src="/icon.png" alt="" className="w-7 h-7 object-contain" />
             <span className="font-bold text-sm text-neutral-900 dark:text-neutral-50">FocusNest</span>
@@ -294,52 +280,30 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             {pathname === "/" ? "Home" : pathname.slice(1).replace(/-/g, " ")}
           </span>
 
-          {/* Profile + Logout */}
           <div className="ml-auto flex items-center gap-2 shrink-0">
-            {!loading && (
+            {!loading && user && (
               <>
-                {user ? (
-                  <>
-                    <Link href="/profile"
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
-                      {userProfile?.avatar ? (
-                        <span className="w-5 h-5 rounded-full overflow-hidden inline-flex shrink-0"
-                          dangerouslySetInnerHTML={{ __html: getAvatar(userProfile.avatar).svg }} />
-                      ) : (
-                        <span className="w-5 h-5 rounded-full bg-emerald-500/20 inline-flex items-center justify-center text-[9px] font-bold text-emerald-600">
-                          {(userProfile?.firstName?.[0] ?? user?.email?.[0] ?? "U").toUpperCase()}
-                        </span>
-                      )}
-                      <span className="hidden sm:inline">{t.nav_profile}</span>
-                    </Link>
-                    <button onClick={() => setShowLogoutConfirm(true)}
-                      className="px-3 py-1.5 rounded-xl text-sm border border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
-                      {t.nav_logout}
-                    </button>
-                  </>
-                ) : isGuest ? (
-                  <Link href="/login"
-                    className="px-3 py-1.5 rounded-xl text-sm bg-emerald-500 hover:bg-emerald-600 text-white font-semibold transition-colors">
-                    {t.nav_login}
-                  </Link>
-                ) : (
-                  <>
-                    <Link href="/login"
-                      className="px-3 py-1.5 rounded-xl text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 transition-colors">
-                      {t.nav_login}
-                    </Link>
-                    <Link href="/signup"
-                      className="px-3 py-1.5 rounded-xl text-sm bg-emerald-500 hover:bg-emerald-600 text-white font-semibold transition-colors">
-                      {t.nav_signup}
-                    </Link>
-                  </>
-                )}
+                <Link href="/profile"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                  {userProfile?.avatar ? (
+                    <span className="w-5 h-5 rounded-full overflow-hidden inline-flex shrink-0"
+                      dangerouslySetInnerHTML={{ __html: getAvatar(userProfile.avatar).svg }} />
+                  ) : (
+                    <span className="w-5 h-5 rounded-full bg-emerald-500/20 inline-flex items-center justify-center text-[9px] font-bold text-emerald-600">
+                      {(userProfile?.firstName?.[0] ?? user?.email?.[0] ?? "U").toUpperCase()}
+                    </span>
+                  )}
+                  <span className="hidden sm:inline">{t.nav_profile}</span>
+                </Link>
+                <button onClick={() => setShowLogoutConfirm(true)}
+                  className="px-3 py-1.5 rounded-xl text-sm border border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+                  {t.nav_logout}
+                </button>
               </>
             )}
           </div>
         </header>
 
-        {/* Page content */}
         <main className="flex-1 overflow-y-auto">
           {children}
         </main>
