@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
-import { collection, query, orderBy, limit, getDocs, Timestamp } from "firebase/firestore";
+import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
 import { usePomodoroContext, type ForestTree } from "@/context/PomodoroContext";
 import Link from "next/link";
 
-// ─── Tree SVGs (mini versions) ────────────────────────────────────────────────
+// ─── Tree SVGs ────────────────────────────────────────────────────────────────
 
 function MiniOak({ dead }: { dead?: boolean }) {
   return (
@@ -84,7 +84,7 @@ function TreeIcon({ treeType, dead }: { treeType: string; dead?: boolean }) {
   }
 }
 
-// ─── Floating island tile ─────────────────────────────────────────────────────
+// ─── Island tile — fixed layout so tree never overlaps date label ─────────────
 
 function IslandTile({ tree, index }: { tree: ForestTree; index: number }) {
   const isDead = tree.status === "abandoned" || tree.completed === false || tree.treeType === "dead";
@@ -93,33 +93,44 @@ function IslandTile({ tree, index }: { tree: ForestTree; index: number }) {
 
   return (
     <div
-      className="group relative flex flex-col items-center"
-      style={{ animation: `tile-in 0.4s ease both`, animationDelay: `${index * 40}ms` }}
+      className="group flex flex-col items-center gap-1"
+      style={{ animation: "tile-in 0.4s ease both", animationDelay: `${index * 40}ms` }}
       title={`${isDead ? "Abandoned" : tree.treeType} — ${label}${tree.label ? ` · ${tree.label}` : ""}`}
     >
+      {/*
+        Layout (top-to-bottom, all in normal flow — no absolute positioning):
+          [tree SVG 48×48]
+          [grass cap]
+          [dirt body]
+          [date label]
+
+        The tree sits directly above the island in normal flow,
+        so it can NEVER overlap the date text below.
+      */}
+
+      {/* Tree */}
+      <div className={`w-12 h-12 transition-transform duration-200 group-hover:scale-110 ${isDead ? "grayscale opacity-60" : ""}`}>
+        <TreeIcon treeType={tree.treeType} dead={isDead} />
+      </div>
+
       {/* Island base */}
-      <div className="relative">
-        {/* Grass top */}
-        <div className={`w-16 h-4 rounded-t-xl ${isDead ? "bg-neutral-600" : "bg-green-400"}`}
-          style={{ clipPath: "ellipse(50% 100% at 50% 100%)" }} />
+      <div className="flex flex-col items-center w-16" style={{ marginTop: -4 }}>
+        {/* Grass cap */}
+        <div
+          className={`w-16 h-4 ${isDead ? "bg-neutral-600" : "bg-green-400"}`}
+          style={{ borderRadius: "50% 50% 0 0 / 100% 100% 0 0" }}
+        />
         {/* Dirt body */}
-        <div className={`w-16 h-6 ${isDead ? "bg-neutral-700" : "bg-amber-800"} rounded-b-lg`}
-          style={{ marginTop: -2 }}>
-          {/* Dirt texture lines */}
+        <div className={`w-16 h-5 ${isDead ? "bg-neutral-700" : "bg-amber-800"} rounded-b-lg`}>
           <div className="flex flex-col gap-1 pt-1 px-2 opacity-40">
             <div className={`h-px ${isDead ? "bg-neutral-500" : "bg-amber-900"} rounded`} />
             <div className={`h-px ${isDead ? "bg-neutral-500" : "bg-amber-900"} rounded w-3/4`} />
           </div>
         </div>
-
-        {/* Tree sitting on island */}
-        <div className={`absolute w-12 h-12 -top-10 left-2 transition-transform duration-200 group-hover:scale-110 ${isDead ? "grayscale opacity-60" : ""}`}>
-          <TreeIcon treeType={tree.treeType} dead={isDead} />
-        </div>
       </div>
 
-      {/* Date label */}
-      <p className="text-[9px] text-neutral-500 dark:text-neutral-600 mt-1 text-center leading-tight">
+      {/* Date label — always below the island, never overlapped */}
+      <p className="text-[9px] text-neutral-500 dark:text-neutral-600 text-center leading-tight">
         {label}
       </p>
     </div>
@@ -128,7 +139,7 @@ function IslandTile({ tree, index }: { tree: ForestTree; index: number }) {
 
 // ─── Stat pill ────────────────────────────────────────────────────────────────
 
-function StatPill({ icon, value, label }: { icon: string; value: string | number; label: string }) {
+function StatPill({ icon, value, label }: { icon: React.ReactNode; value: string | number; label: string }) {
   return (
     <div className="flex items-center gap-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3">
       <span className="text-xl">{icon}</span>
@@ -158,6 +169,7 @@ export default function ForestPage() {
       } catch (e) { console.error(e); }
       setLoading(false);
     })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const completed = forestTrees.filter(t => t.status !== "abandoned" && t.completed !== false && t.treeType !== "dead");
@@ -179,7 +191,7 @@ export default function ForestPage() {
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
       <style>{`
         @keyframes tile-in {
-          from { opacity: 0; transform: translateY(16px) scale(0.85); }
+          from { opacity: 0; transform: translateY(12px) scale(0.88); }
           to   { opacity: 1; transform: translateY(0)   scale(1); }
         }
       `}</style>
@@ -190,7 +202,7 @@ export default function ForestPage() {
         <div className="flex items-start justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
-              My Forest 🌳
+              My Forest &#127795;
             </h1>
             <p className="text-neutral-500 dark:text-neutral-400 mt-1 text-sm">
               Every completed focus session grows a tree.
@@ -204,13 +216,13 @@ export default function ForestPage() {
 
         {/* Stats row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-          <StatPill icon="🌳" value={completed.length}  label="Trees planted" />
-          <StatPill icon="⏱" value={`${Math.round(totalMins / 60)}h`} label="Focus time" />
-          <StatPill icon="🔥" value={`${streak}d`}      label="Current streak" />
-          <StatPill icon="💀" value={abandoned.length}  label="Abandoned" />
+          <StatPill icon="&#127795;" value={completed.length}              label="Trees planted" />
+          <StatPill icon="&#9203;"   value={`${Math.round(totalMins / 60)}h`} label="Focus time" />
+          <StatPill icon="&#128293;" value={`${streak}d`}                  label="Current streak" />
+          <StatPill icon="&#128128;" value={abandoned.length}              label="Abandoned" />
         </div>
 
-        {/* Forest island grid */}
+        {/* Forest grid */}
         {loading ? (
           <div className="flex justify-center py-24">
             <div className="w-6 h-6 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
@@ -231,21 +243,29 @@ export default function ForestPage() {
           </div>
         ) : (
           <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-6">
               <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">
                 {forestTrees.length} tree{forestTrees.length !== 1 ? "s" : ""} total
               </h2>
               <div className="flex items-center gap-3 text-xs text-neutral-400">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Completed</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-neutral-500 inline-block" /> Abandoned</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                  Completed
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-neutral-500 inline-block" />
+                  Abandoned
+                </span>
               </div>
             </div>
 
-            {/* Island grid */}
-            <div
-              className="flex flex-wrap gap-4 pt-4"
-              style={{ minHeight: 120 }}
-            >
+            {/*
+              Each IslandTile is self-contained top-to-bottom:
+              tree → island → date.
+              flex-wrap with items-end aligns all island bases to the same
+              bottom line so the grid looks uniform.
+            */}
+            <div className="flex flex-wrap gap-x-5 gap-y-6 items-end">
               {forestTrees.map((tree, i) => (
                 <IslandTile key={tree.id} tree={tree} index={i} />
               ))}

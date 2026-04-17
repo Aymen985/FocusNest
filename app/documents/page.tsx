@@ -33,9 +33,9 @@ const MAX_MB = 20;
 
 function fileIcon(name: string) {
   const ext = name.split(".").pop()?.toLowerCase();
-  if (ext === "pdf")  return { icon: "??", color: "text-red-400",    bg: "bg-red-500/10"    };
-  if (ext === "docx") return { icon: "??", color: "text-blue-400",   bg: "bg-blue-500/10"   };
-  return                     { icon: "??", color: "text-neutral-400", bg: "bg-neutral-500/10" };
+  if (ext === "pdf")  return { icon: "PDF",  color: "text-red-400",    bg: "bg-red-500/10"    };
+  if (ext === "docx") return { icon: "DOC",  color: "text-blue-400",   bg: "bg-blue-500/10"   };
+  return                     { icon: "TXT",  color: "text-neutral-400", bg: "bg-neutral-500/10" };
 }
 
 function formatDate(iso: string) {
@@ -45,7 +45,7 @@ function formatDate(iso: string) {
 }
 
 function formatSize(chunks: number) {
-  // rough estimate: ~500 chars/chunk ? ~0.5 KB
+  // rough estimate: ~500 chars/chunk ~ 0.5 KB
   const kb = Math.round(chunks * 0.5);
   return kb > 999 ? `${(kb / 1000).toFixed(1)} MB` : `${kb} KB`;
 }
@@ -120,7 +120,7 @@ function UploadZone({
       {uploadState.status === "uploading" ? (
         <>
           <p className="text-sm font-medium text-neutral-300">
-            Uploading {uploadState.name}�
+            Uploading {uploadState.name}...
           </p>
           <div className="w-48 h-1.5 rounded-full bg-neutral-700 overflow-hidden">
             <div
@@ -136,13 +136,11 @@ function UploadZone({
               {drag ? "Drop to upload" : "Drop a file or click to browse"}
             </p>
             <p className="text-xs text-neutral-500 mt-1">
-              PDF, DOCX, or TXT � max {MAX_MB} MB
+              PDF, DOCX, or TXT &middot; max {MAX_MB} MB
             </p>
           </div>
         </>
       )}
-
-      {/* Status messages outside the zone */}
     </div>
   );
 }
@@ -164,7 +162,7 @@ function DocRow({
     <div className="flex items-center gap-4 px-4 py-3 hover:bg-neutral-800/50 transition-colors group">
       {/* file type badge */}
       <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${bg}`}>
-        <span className={`text-base ${color}`}>{icon}</span>
+        <span className={`text-[10px] font-bold ${color}`}>{icon}</span>
       </div>
 
       {/* info */}
@@ -173,7 +171,7 @@ function DocRow({
           {d.name}
         </p>
         <p className="text-xs text-neutral-500 mt-0.5">
-          {d.chunkCount} chunks � ~{formatSize(d.chunkCount)} � {formatDate(d.uploadedAt)}
+          {d.chunkCount} chunks &middot; ~{formatSize(d.chunkCount)} &middot; {formatDate(d.uploadedAt)}
         </p>
       </div>
 
@@ -183,7 +181,7 @@ function DocRow({
         disabled={deleting}
         className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity px-2.5 py-1.5 rounded-lg text-xs font-medium border border-red-500/30 text-red-400 hover:bg-red-500/10 disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        {deleting ? "Deleting�" : "Delete"}
+        {deleting ? "Deleting..." : "Delete"}
       </button>
     </div>
   );
@@ -217,12 +215,10 @@ export default function DocumentsPage() {
 
   // -- Upload --
   async function handleUpload(file: File) {
-    // validate type
     if (!ACCEPTED.includes(file.type) && !file.name.endsWith(".txt")) {
       setUploadState({ status: "error", message: "Only PDF, DOCX, and TXT files are supported." });
       return;
     }
-    // validate size
     if (file.size > MAX_MB * 1024 * 1024) {
       setUploadState({ status: "error", message: `File is too large. Max size is ${MAX_MB} MB.` });
       return;
@@ -233,7 +229,6 @@ export default function DocumentsPage() {
     try {
       const token = await auth.currentUser?.getIdToken();
 
-      // Fake progress ticks while waiting for the server
       const ticker = setInterval(() => {
         setUploadState((prev) =>
           prev.status === "uploading" && prev.progress < 85
@@ -260,7 +255,6 @@ export default function DocumentsPage() {
 
       setUploadState({ status: "uploading", name: file.name, progress: 100 });
 
-      // Refresh list then show success
       await fetchDocuments();
       setUploadState({ status: "success", name: file.name });
       setTimeout(() => setUploadState({ status: "idle" }), 3000);
@@ -294,9 +288,9 @@ export default function DocumentsPage() {
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-neutral-50 tracking-tight">Documents</h1>
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50 tracking-tight">Documents</h1>
           <p className="text-sm text-neutral-400 mt-1">
-            Upload study materials � your assistant will use them to answer questions.
+            Upload study materials &mdash; your assistant will use them to answer questions.
           </p>
         </div>
 
@@ -308,7 +302,7 @@ export default function DocumentsPage() {
         {/* Upload feedback */}
         {uploadState.status === "success" && (
           <p className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2 mb-4">
-            ? "{uploadState.name}" uploaded successfully.
+            &ldquo;{uploadState.name}&rdquo; uploaded successfully.
           </p>
         )}
         {uploadState.status === "error" && (
@@ -341,7 +335,11 @@ export default function DocumentsPage() {
               </div>
             ) : documents.length === 0 ? (
               <div className="px-4 py-10 text-center">
-                <p className="text-2xl mb-2">??</p>
+                <div className="w-10 h-10 rounded-xl bg-neutral-800 flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-5 h-5 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                  </svg>
+                </div>
                 <p className="text-sm font-medium text-neutral-400 mb-1">No documents yet</p>
                 <p className="text-xs text-neutral-600">
                   Upload a PDF, DOCX, or TXT above to get started.

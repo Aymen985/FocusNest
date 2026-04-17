@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, FormEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface Message {
   role: "user" | "assistant";
@@ -11,6 +12,7 @@ interface Message {
 
 export default function AssistantPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -39,7 +41,6 @@ export default function AssistantPage() {
     setInput("");
     setStreaming(true);
 
-    // reset textarea height
     if (textareaRef.current) textareaRef.current.style.height = "auto";
 
     try {
@@ -48,10 +49,20 @@ export default function AssistantPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ message: text, useDocContext: docContext }),
+        body: JSON.stringify({
+          message: text,
+          useDocContext: docContext,
+          // Pass conversation history (excluding the latest user message we just added)
+          history: messages.map((m) => ({ role: m.role, content: m.content })),
+        }),
       });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData?.error ?? `HTTP ${res.status}`);
+      }
 
       if (!res.body) throw new Error("No response body");
 
@@ -79,7 +90,10 @@ export default function AssistantPage() {
       console.error(err);
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "Sorry, something went wrong." },
+        {
+          role: "assistant",
+          content: "Sorry, something went wrong. Please try again.",
+        },
       ]);
     } finally {
       setStreaming(false);
@@ -92,6 +106,12 @@ export default function AssistantPage() {
       send();
     }
   };
+
+  const quickPrompts = [
+    "Summarise my uploaded documents",
+    "Quiz me on the main concepts",
+    "Explain the key terms",
+  ];
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] bg-neutral-50 dark:bg-neutral-950">
@@ -153,16 +173,14 @@ export default function AssistantPage() {
               Ask questions about your notes, get explanations, or quiz yourself
               on any topic.
             </p>
-            {/* Quick prompts */}
             <div className="flex flex-wrap gap-2 mt-6 justify-center">
-              {[
-                "Summarise my uploaded documents",
-                "Quiz me on the main concepts",
-                "Explain the key terms",
-              ].map((p) => (
+              {quickPrompts.map((p) => (
                 <button
                   key={p}
-                  onClick={() => { setInput(p); textareaRef.current?.focus(); }}
+                  onClick={() => {
+                    setInput(p);
+                    textareaRef.current?.focus();
+                  }}
                   className="text-xs px-3 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
                 >
                   {p}
@@ -175,7 +193,9 @@ export default function AssistantPage() {
         {messages.map((m, i) => (
           <div
             key={i}
-            className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+            className={`flex ${
+              m.role === "user" ? "justify-end" : "justify-start"
+            }`}
           >
             {m.role === "assistant" && (
               <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
@@ -212,9 +232,12 @@ export default function AssistantPage() {
           <textarea
             ref={textareaRef}
             value={input}
-            onChange={(e) => { setInput(e.target.value); autoResize(); }}
+            onChange={(e) => {
+              setInput(e.target.value);
+              autoResize();
+            }}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about your documents� (Shift+Enter for new line)"
+            placeholder="Ask about your documents... (Shift+Enter for new line)"
             rows={1}
             className="flex-1 resize-none bg-transparent text-sm text-neutral-800 dark:text-neutral-200 placeholder-neutral-400 dark:placeholder-neutral-500 outline-none py-1"
             style={{ maxHeight: 160 }}
@@ -240,7 +263,7 @@ export default function AssistantPage() {
           </button>
         </form>
         <p className="text-center text-xs text-neutral-400 mt-2">
-          Enter to send � Shift+Enter for new line
+          Enter to send &middot; Shift+Enter for new line
         </p>
       </div>
     </div>

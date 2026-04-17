@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
+import AppShell from "@/components/AppShell";
 import { AuthProvider } from "@/context/AuthContext";
 import { PomodoroProvider } from "@/context/PomodoroContext";
 import { GuestProvider } from "@/context/GuestContext";
@@ -55,9 +55,10 @@ export default function RootLayout({
           <GuestProvider>
             <LanguageProvider>
               <PomodoroProvider>
-                <Navbar />
-                <WelcomeModal />
-                {children}
+                <AppShell>
+                  <WelcomeModal />
+                  {children}
+                </AppShell>
               </PomodoroProvider>
             </LanguageProvider>
           </GuestProvider>
