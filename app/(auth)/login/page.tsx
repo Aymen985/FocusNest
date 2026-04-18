@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import Link from "next/link";
-import { useGuest } from "@/context/GuestContext";
 import { useLanguage } from "@/context/LanguageContext";
 import LoadingScreen from "@/components/LoadingScreen";
 
@@ -14,7 +13,6 @@ export default function LoginPage() {
   const { login, user, loading: authLoading } = useAuth();
   const router = useRouter();
   const { t } = useLanguage();
-  const { continueAsGuest } = useGuest();
 
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");

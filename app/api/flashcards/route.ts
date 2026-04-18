@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     const decoded = await adminAuth.verifyIdToken(token);
     const uid = decoded.uid;
 
-    const { docId, count = 10 } = await req.json();
+    const { docId, count = 10, pdfName } = await req.json(); // ← added pdfName
 
     let chunks: string[] = [];
     if (docId) {
@@ -88,7 +88,8 @@ Generate exactly ${count} flashcards.`,
 
     await setRef.set({
       cards,
-      docId: docId ?? null,
+      docId:   docId ?? null,
+      pdfName: pdfName ?? "All documents", // ← added
       createdAt: new Date(),
       count: cards.length,
     });

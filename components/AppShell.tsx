@@ -90,6 +90,7 @@ function SidebarLanguageBlock({ lang, setLang, isDark, toggleTheme }: LangDropdo
         )}
       </div>
 
+      {/* Theme toggle — only renders after mount to avoid SSR/client mismatch */}
       <button
         onClick={toggleTheme}
         className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
@@ -116,9 +117,28 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const { t, lang, setLang } = useLanguage();
 
   const [sidebarOpen,       setSidebarOpen]       = useState(true);
-  const [isDark,            setIsDark]            = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [mobileOpen,        setMobileOpen]        = useState(false);
+
+  // ── Dark mode ──────────────────────────────────────────────────────────────
+  // Start as false (matches server render — server has no localStorage).
+  // After mount, read localStorage and sync. The inline script in layout.tsx
+  // already applied the correct class to <html> before first paint, so there
+  // is no visual flash. The only thing that was flashing before was React's
+  // state being out of sync, causing a re-render — this fixes that by making
+  // server and client agree on the initial value (false), then correcting
+  // silently after hydration with suppressHydrationWarning on <html>.
+  const [isDark,   setIsDark]   = useState(false);
+  const [mounted,  setMounted]  = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("focusnest_theme");
+    const dark =
+      stored === "dark" ||
+      (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    setIsDark(dark);
+    setMounted(true);
+  }, []);
 
   let isActive = false;
   try {
@@ -126,10 +146,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     const ctx = usePomodoroContext();
     isActive = ctx.isActive;
   } catch {}
-
-  useEffect(() => {
-    setIsDark(document.documentElement.classList.contains("dark"));
-  }, []);
 
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
@@ -162,6 +178,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     router.push("/login");
     return null;
   }
+
+  // Pass the effective dark value: before mount use false (SSR-safe),
+  // after mount use the real value from localStorage.
+  const effectiveDark = mounted ? isDark : false;
 
   function SidebarNav() {
     return (
@@ -213,7 +233,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <SidebarLanguageBlock
           lang={lang}
           setLang={setLang}
-          isDark={isDark}
+          isDark={effectiveDark}
           toggleTheme={toggleTheme}
         />
       </div>

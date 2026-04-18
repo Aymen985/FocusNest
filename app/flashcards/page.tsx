@@ -3,7 +3,16 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  orderBy,
+  limit,
+  updateDoc,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
 
 interface Flashcard {
   front: string;
@@ -15,6 +24,7 @@ interface FlashcardSet {
   cards: Flashcard[];
   createdAt: { seconds: number };
   count: number;
+  pdfName?: string; // ← new field
 }
 
 interface DocMeta {
@@ -85,6 +95,18 @@ function FlipCard({
   );
 }
 
+// Trash icon
+function TrashIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <path d="M10 11v6M14 11v6" />
+      <path d="M9 6V4h6v2" />
+    </svg>
+  );
+}
+
 export default function FlashcardsPage() {
   const { user } = useAuth();
   const [docs, setDocs] = useState<DocMeta[]>([]);
@@ -94,10 +116,12 @@ export default function FlashcardsPage() {
   const [cards, setCards] = useState<Flashcard[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [savedSets, setSavedSets] = useState<FlashcardSet[]>([]);
-  const [view, setView] = useState<"generate" | "study" | "history">(
-    "generate"
-  );
+  const [view, setView] = useState<"generate" | "study" | "history">("generate");
   const [error, setError] = useState("");
+
+  // Delete confirmation state
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleting, setDeleting]             = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -111,7 +135,7 @@ export default function FlashcardsPage() {
         query(
           collection(db, "users", user.uid, "flashcardSets"),
           orderBy("createdAt", "desc"),
-          limit(10)
+          limit(20)
         )
       );
       setSavedSets(
@@ -127,6 +151,11 @@ export default function FlashcardsPage() {
     if (generating) return;
     setError("");
     setGenerating(true);
+
+    // Determine which document name to store
+    const chosenDoc = docs.find((d) => d.id === selectedDoc);
+    const pdfName = chosenDoc ? chosenDoc.name : "All documents";
+
     try {
       const token = await auth.currentUser?.getIdToken();
       const res = await fetch("/api/flashcards", {
@@ -138,6 +167,7 @@ export default function FlashcardsPage() {
         body: JSON.stringify({
           docId: selectedDoc || undefined,
           count: cardCount,
+          pdfName, // ← pass to API so it can store it in Firestore
         }),
       });
       const data = await res.json();
@@ -145,12 +175,41 @@ export default function FlashcardsPage() {
       setCards(data.cards);
       setCurrentIndex(0);
       setView("study");
+
+      // Refresh history list so the new set appears immediately
+      const setsSnap = await getDocs(
+        query(
+          collection(db, "users", user!.uid, "flashcardSets"),
+          orderBy("createdAt", "desc"),
+          limit(20)
+        )
+      );
+      setSavedSets(
+        setsSnap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<FlashcardSet, "id">),
+        }))
+      );
     } catch (e: any) {
       setError(e.message);
     } finally {
       setGenerating(false);
     }
   };
+
+  // ── Delete a saved set ────────────────────────────────────────────────────
+  async function handleDelete(id: string) {
+    if (!user) return;
+    setDeleting(true);
+    try {
+      await deleteDoc(doc(db, "users", user.uid, "flashcardSets", id));
+      setSavedSets((prev) => prev.filter((s) => s.id !== id));
+    } catch (e) {
+      console.error("Delete failed", e);
+    }
+    setDeleting(false);
+    setDeleteTargetId(null);
+  }
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
@@ -182,6 +241,11 @@ export default function FlashcardsPage() {
               {tab === "study" && cards.length > 0 && (
                 <span className="ml-1 text-xs text-emerald-400">
                   ({cards.length})
+                </span>
+              )}
+              {tab === "history" && savedSets.length > 0 && (
+                <span className="ml-1 text-xs text-neutral-400">
+                  ({savedSets.length})
                 </span>
               )}
             </button>
@@ -283,7 +347,6 @@ export default function FlashcardsPage() {
                 Next &rarr;
               </button>
             </div>
-            {/* All cards list */}
             <details className="mt-6">
               <summary className="text-xs text-neutral-400 cursor-pointer hover:text-neutral-600 dark:hover:text-neutral-300">
                 Show all {cards.length} cards
@@ -316,30 +379,85 @@ export default function FlashcardsPage() {
               </p>
             ) : (
               savedSets.map((s) => (
-                <button
+                <div
                   key={s.id}
-                  onClick={() => {
-                    setCards(s.cards);
-                    setCurrentIndex(0);
-                    setView("study");
-                  }}
-                  className="w-full text-left bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors"
+                  className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 flex items-center gap-3 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors group"
                 >
-                  <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
-                    {s.count} flashcards
-                  </p>
-                  <p className="text-xs text-neutral-400 mt-0.5">
-                    {new Date(s.createdAt.seconds * 1000).toLocaleDateString(
-                      "en-GB",
-                      { day: "numeric", month: "short", year: "numeric" }
+                  {/* Clickable info area */}
+                  <button
+                    className="flex-1 text-left min-w-0"
+                    onClick={() => {
+                      setCards(s.cards);
+                      setCurrentIndex(0);
+                      setView("study");
+                    }}
+                  >
+                    {/* PDF / document name */}
+                    {s.pdfName && (
+                      <p className="text-xs text-neutral-400 dark:text-neutral-500 truncate mb-0.5">
+                        {s.pdfName}
+                      </p>
                     )}
-                  </p>
-                </button>
+                    <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                      {s.count ?? s.cards?.length ?? 0} flashcards
+                    </p>
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      {new Date(s.createdAt.seconds * 1000).toLocaleDateString(
+                        "en-GB",
+                        { day: "numeric", month: "short", year: "numeric" }
+                      )}
+                    </p>
+                  </button>
+
+                  {/* Delete button */}
+                  <button
+                    onClick={() => setDeleteTargetId(s.id)}
+                    className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-neutral-300 dark:text-neutral-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                    title="Delete this set"
+                  >
+                    <TrashIcon />
+                  </button>
+                </div>
               ))
             )}
           </div>
         )}
       </div>
+
+      {/* ── Delete confirmation modal ── */}
+      {deleteTargetId && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setDeleteTargetId(null)}
+        >
+          <div
+            className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 max-w-xs w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200 mb-1">
+              Delete this flashcard set?
+            </p>
+            <p className="text-xs text-neutral-400 mb-5">
+              This will permanently remove the set and cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteTargetId(null)}
+                className="flex-1 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 text-sm text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deleteTargetId)}
+                disabled={deleting}
+                className="flex-1 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-colors disabled:opacity-50"
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

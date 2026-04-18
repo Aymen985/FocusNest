@@ -4,18 +4,15 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { usePomodoroContext } from "@/context/PomodoroContext";
-import { useGuest, GUEST_ALLOWED } from "@/context/GuestContext";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { isGuest } = useGuest();
   const { user } = useAuth();
   const { t } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Live timer dot
   let isActive = false;
   try {
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -34,7 +31,6 @@ export default function Navbar() {
     { href: "/about",      label: t.nav_about },
   ];
 
-  // On the home page ("/") the sidebar handles everything — hide the navbar entirely
   if (pathname === "/") return null;
 
   return (
@@ -49,36 +45,30 @@ export default function Navbar() {
 
         {/* Desktop nav links */}
         <div className="hidden md:flex items-center gap-0.5 flex-1 overflow-x-auto">
-          {navLinks.map((l) => {
-            const blocked = isGuest && !GUEST_ALLOWED.includes(l.href);
-            const href = blocked ? `/login?reason=guest` : l.href;
-            return (
-              <Link key={l.href} href={href}
-                className={`relative px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors ${
-                  pathname === l.href
-                    ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 font-medium"
-                    : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                } ${blocked ? "opacity-50" : ""}`}>
-                {l.label}
-                {blocked && <span className="ml-1 text-[9px] text-neutral-400">&#128274;</span>}
-                {l.href === "/pomodoro" && isActive && (
-                  <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                )}
-              </Link>
-            );
-          })}
+          {navLinks.map((l) => (
+            <Link key={l.href} href={l.href}
+              className={`relative px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors ${
+                pathname === l.href
+                  ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 font-medium"
+                  : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+              }`}>
+              {l.label}
+              {l.href === "/pomodoro" && isActive && (
+                <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              )}
+            </Link>
+          ))}
         </div>
 
-        {/* Desktop: profile + logout only (no lang/theme — those are in home sidebar) */}
-        {user && (
+        {/* Desktop: profile / login */}
+        {user ? (
           <div className="hidden md:flex items-center gap-2 shrink-0">
             <Link href="/profile"
               className="px-3 py-1.5 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
               {t.nav_profile}
             </Link>
           </div>
-        )}
-        {!user && !isGuest && (
+        ) : (
           <div className="hidden md:flex items-center gap-2 shrink-0">
             <Link href="/login"
               className="px-3 py-1.5 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 transition-colors">
@@ -104,45 +94,39 @@ export default function Navbar() {
       {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden border-t border-neutral-100 dark:border-neutral-800 py-3 space-y-1">
-          {navLinks.map((l) => {
-            const blocked = isGuest && !GUEST_ALLOWED.includes(l.href);
-            const href = blocked ? `/login?reason=guest` : l.href;
-            return (
-              <Link key={l.href} href={href} onClick={() => setMenuOpen(false)}
-                className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-                  pathname === l.href
-                    ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 font-medium"
-                    : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                } ${blocked ? "opacity-50" : ""}`}>
-                {l.label}
-                {blocked && <span className="text-[9px] text-neutral-400">&#128274;</span>}
-                {l.href === "/pomodoro" && isActive && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                )}
-              </Link>
-            );
-          })}
-          {/* Mobile: profile link */}
-          {user && (
-            <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800 mt-2 space-y-1">
+          {navLinks.map((l) => (
+            <Link key={l.href} href={l.href} onClick={() => setMenuOpen(false)}
+              className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                pathname === l.href
+                  ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 font-medium"
+                  : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+              }`}>
+              {l.label}
+              {l.href === "/pomodoro" && isActive && (
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              )}
+            </Link>
+          ))}
+
+          <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800 mt-2 space-y-1">
+            {user ? (
               <Link href="/profile" onClick={() => setMenuOpen(false)}
                 className="block px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
                 {t.nav_profile}
               </Link>
-            </div>
-          )}
-          {!user && !isGuest && (
-            <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800 mt-2 space-y-1">
-              <Link href="/login" onClick={() => setMenuOpen(false)}
-                className="block px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 transition-colors">
-                {t.nav_login}
-              </Link>
-              <Link href="/signup" onClick={() => setMenuOpen(false)}
-                className="block px-3 py-2 rounded-lg text-sm bg-emerald-500 hover:bg-emerald-600 text-white text-center transition-colors">
-                {t.nav_signup}
-              </Link>
-            </div>
-          )}
+            ) : (
+              <>
+                <Link href="/login" onClick={() => setMenuOpen(false)}
+                  className="block px-3 py-2 rounded-lg text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 transition-colors">
+                  {t.nav_login}
+                </Link>
+                <Link href="/signup" onClick={() => setMenuOpen(false)}
+                  className="block px-3 py-2 rounded-lg text-sm bg-emerald-500 hover:bg-emerald-600 text-white text-center transition-colors">
+                  {t.nav_signup}
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       )}
     </nav>

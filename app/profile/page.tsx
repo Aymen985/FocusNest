@@ -7,13 +7,13 @@ import {
   updatePassword,
   reauthenticateWithCredential,
   EmailAuthProvider,
+  deleteUser,
 } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { updateUserProfile } from "@/lib/userProfile";
 import LoadingScreen from "@/components/LoadingScreen";
 import { AVATARS, getAvatar, type AvatarId } from "@/components/avatars";
-import { doc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { doc, updateDoc, deleteDoc } from "firebase/firestore";
 
 /* --- helpers ------------------------------------------------ */
 function initials(first: string, last: string) {
@@ -132,6 +132,13 @@ export default function ProfilePage() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [mounted,           setMounted]           = useState(false);
 
+  // ── Delete account state ──────────────────────────────────────────────────
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePassword,    setDeletePassword]    = useState("");
+  const [showDeletePw,      setShowDeletePw]      = useState(false);
+  const [deleteError,       setDeleteError]       = useState("");
+  const [deleting,          setDeleting]          = useState(false);
+
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
@@ -174,7 +181,6 @@ export default function ProfilePage() {
     setSaving(false);
   }
 
-  // Validate password rules client-side before submitting
   function validateNewPassword(pw: string): string | null {
     for (const rule of PW_RULES) {
       if (!rule.pass(pw)) return `Password does not meet: "${rule.label}"`;
@@ -185,8 +191,6 @@ export default function ProfilePage() {
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
     setPasswordMsg("");
-
-    // Client-side checks
     if (!currentPassword) { setPasswordMsg("Please enter your current password."); return; }
     const validationError = validateNewPassword(newPassword);
     if (validationError) { setPasswordMsg(validationError); return; }
@@ -217,7 +221,28 @@ export default function ProfilePage() {
     router.push("/login");
   }
 
-  // Group avatars for the picker
+  // ── Delete account ────────────────────────────────────────────────────────
+  async function handleDeleteAccount() {
+    if (!user || !user.email) return;
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const credential = EmailAuthProvider.credential(user.email, deletePassword);
+      await reauthenticateWithCredential(auth.currentUser!, credential);
+      // Delete Firestore data first
+      await deleteDoc(doc(db, "users", user.uid));
+      // Then delete the Firebase Auth account
+      await deleteUser(auth.currentUser!);
+      router.push("/login");
+    } catch (err: any) {
+      if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential")
+        setDeleteError("Incorrect password. Please try again.");
+      else
+        setDeleteError("Failed to delete account. Please try again.");
+    }
+    setDeleting(false);
+  }
+
   const humanAvatars = AVATARS.filter((a) => a.id === "male" || a.id === "female");
   const funAvatars   = AVATARS.filter((a) => a.id !== "male" && a.id !== "female");
 
@@ -339,10 +364,20 @@ export default function ProfilePage() {
         .fn-btn-outline:not(:disabled):hover { border-color: var(--fn-ink-muted); color: var(--fn-ink); }
         .fn-btn-danger { background: transparent; border: 1.5px solid rgba(255,100,80,0.35); color: #ff6e50; }
         .fn-btn-danger:hover { background: rgba(255,100,80,0.1); border-color: #ff6e50; }
+        .fn-btn-danger-solid { background: #ef4444; color: #fff; border: none; }
+        .fn-btn-danger-solid:not(:disabled):hover { background: #dc2626; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(239,68,68,0.35); }
         .fn-status { font-size: 0.82rem; padding: 0.5rem 0.75rem; border-radius: 8px; margin-bottom: 0.75rem; font-weight: 500; }
         .fn-status--ok  { background: var(--fn-sage-light); color: var(--fn-sage); }
         .fn-status--err { background: rgba(239,68,68,0.1); color: #ef4444; }
         .fn-divider { height: 1px; background: var(--fn-border); margin: 1.25rem 0; }
+        .fn-danger-zone {
+          background: var(--fn-paper); border: 1px solid rgba(239,68,68,0.25);
+          border-radius: 16px; box-shadow: var(--fn-shadow); padding: 1.75rem;
+        }
+        .fn-danger-row {
+          display: flex; align-items: center; justify-content: space-between;
+          gap: 1rem; flex-wrap: wrap;
+        }
         .fn-overlay {
           position: fixed; inset: 0; background: rgba(0,0,0,0.7);
           backdrop-filter: blur(4px); display: flex; align-items: center;
@@ -352,6 +387,12 @@ export default function ProfilePage() {
           background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1);
           border-radius: 20px; padding: 2rem; max-width: 340px; width: 100%;
           text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+          animation: fn-pop 0.2s ease;
+        }
+        .fn-modal-danger {
+          background: #1a1a1a; border: 1px solid rgba(239,68,68,0.3);
+          border-radius: 20px; padding: 2rem; max-width: 360px; width: 100%;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.6);
           animation: fn-pop 0.2s ease;
         }
         @keyframes fn-pop { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -377,7 +418,6 @@ export default function ProfilePage() {
               ) : (
                 <div className="fn-avatar-inner">{initials(firstName, lastName)}</div>
               )}
-              {/* Pencil edit badge — no emoji */}
               <span style={{
                 position: "absolute", bottom: 2, right: 2,
                 background: "#10b981", borderRadius: "50%",
@@ -391,7 +431,6 @@ export default function ProfilePage() {
               </span>
             </div>
 
-            {/* Avatar picker */}
             {showAvatarPicker && (
               <div style={{
                 position: "absolute", top: "calc(100% + 8px)", left: "50%",
@@ -553,7 +592,6 @@ export default function ProfilePage() {
                     )}
                   </button>
                 </div>
-                {/* Live strength meter */}
                 <PasswordStrength password={newPassword} />
               </Field>
 
@@ -620,6 +658,28 @@ export default function ProfilePage() {
             </button>
           </SectionCard>
 
+          {/* ── Danger zone: Delete account ── */}
+          <div className="fn-danger-zone">
+            <h2 className="fn-card-title" style={{ color: "#ef4444" }}>Danger zone</h2>
+            <div className="fn-danger-row">
+              <div>
+                <p style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--fn-ink)", marginBottom: "0.2rem" }}>
+                  Delete your account
+                </p>
+                <p style={{ fontSize: "0.82rem", color: "var(--fn-ink-muted)", lineHeight: 1.5 }}>
+                  Permanently deletes your account and all data. This cannot be undone.
+                </p>
+              </div>
+              <button
+                className="fn-btn fn-btn-danger-solid"
+                style={{ whiteSpace: "nowrap" }}
+                onClick={() => { setShowDeleteConfirm(true); setDeleteError(""); setDeletePassword(""); }}
+              >
+                Delete account
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -644,6 +704,80 @@ export default function ProfilePage() {
               </button>
               <button className="fn-btn fn-btn-danger" onClick={handleLogout}>
                 Sign out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete account modal ── */}
+      {showDeleteConfirm && (
+        <div className="fn-overlay" onClick={() => setShowDeleteConfirm(false)}>
+          <div className="fn-modal-danger" onClick={(e) => e.stopPropagation()}>
+            {/* Warning icon */}
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: "1rem" }}>
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+
+            <p className="fn-modal-title" style={{ color: "#ef4444" }}>Delete your account?</p>
+            <p className="fn-modal-body">
+              This will permanently delete your account, flashcards, sessions, and all data.
+              <strong style={{ color: "var(--fn-ink)", display: "block", marginTop: "0.4rem" }}>
+                This action cannot be undone.
+              </strong>
+            </p>
+
+            {/* Password confirmation */}
+            <div style={{ textAlign: "left", marginBottom: "1rem" }}>
+              <label style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--fn-ink-subtle)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: "0.35rem" }}>
+                Enter your password to confirm
+              </label>
+              <div className="fn-pw-wrap">
+                <input
+                  type={showDeletePw ? "text" : "password"}
+                  className="fn-input"
+                  placeholder="Your password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  autoComplete="current-password"
+                />
+                <button type="button" className="fn-pw-toggle" onClick={() => setShowDeletePw((v) => !v)}>
+                  {showDeletePw ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+                      <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  )}
+                </button>
+              </div>
+              {deleteError && (
+                <p style={{ fontSize: "0.78rem", color: "#ef4444", marginTop: "0.4rem" }}>{deleteError}</p>
+              )}
+            </div>
+
+            <div className="fn-modal-actions">
+              <button
+                className="fn-btn fn-btn-outline"
+                onClick={() => setShowDeleteConfirm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="fn-btn fn-btn-danger-solid"
+                disabled={!deletePassword || deleting}
+                onClick={handleDeleteAccount}
+              >
+                {deleting ? "Deleting..." : "Delete permanently"}
               </button>
             </div>
           </div>

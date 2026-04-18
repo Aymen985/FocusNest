@@ -4,9 +4,7 @@ import "./globals.css";
 import AppShell from "@/components/AppShell";
 import { AuthProvider } from "@/context/AuthContext";
 import { PomodoroProvider } from "@/context/PomodoroContext";
-import { GuestProvider } from "@/context/GuestContext";
 import { LanguageProvider } from "@/context/LanguageContext";
-import WelcomeModal from "@/components/WelcomeModal";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,6 +42,12 @@ export default function RootLayout({
   return (
     <html lang="en" dir="ltr" suppressHydrationWarning>
       <head>
+        {/*
+          This script runs synchronously BEFORE React hydrates, applying the
+          saved theme class to <html> before the first paint — this is what
+          prevents the dark→light flash when refreshing in dark mode.
+          It reads from 'focusnest_theme' which matches what AppShell writes.
+        */}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem('focusnest_theme');if(t==='dark'){document.documentElement.classList.add('dark');document.documentElement.removeAttribute('data-theme')}else if(t==='light'){document.documentElement.classList.remove('dark');document.documentElement.setAttribute('data-theme','light')}else if(window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.classList.add('dark')}var l=localStorage.getItem('focusnest_lang');if(l){document.documentElement.setAttribute('lang',l);document.documentElement.setAttribute('dir',l==='ar'?'rtl':'ltr')}}catch(e){}})();`,
@@ -52,16 +56,13 @@ export default function RootLayout({
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider>
-          <GuestProvider>
-            <LanguageProvider>
-              <PomodoroProvider>
-                <AppShell>
-                  <WelcomeModal />
-                  {children}
-                </AppShell>
-              </PomodoroProvider>
-            </LanguageProvider>
-          </GuestProvider>
+          <LanguageProvider>
+            <PomodoroProvider>
+              <AppShell>
+                {children}
+              </AppShell>
+            </PomodoroProvider>
+          </LanguageProvider>
         </AuthProvider>
       </body>
     </html>

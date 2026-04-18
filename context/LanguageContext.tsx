@@ -2,15 +2,15 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
-export type Lang = "en" | "fr" | "ar" | "es" | "de";
+export type Lang = "en" | "fr" | "es" | "de"; // "ar" removed
 
 // Flag images via flagcdn.com — renders identically on all OS/browsers
 export const LANGUAGES: { code: Lang; label: string; nativeName: string; flag: string; countryCode: string }[] = [
-  { code: "en", label: "English",  nativeName: "English",  flag: "🇬🇧", countryCode: "gb" },
-  { code: "fr", label: "French",   nativeName: "Français", flag: "🇫🇷", countryCode: "fr" },
-  { code: "ar", label: "Arabic",   nativeName: "العربية",  flag: "🇸🇦", countryCode: "sa" },
-  { code: "es", label: "Spanish",  nativeName: "Español",  flag: "🇪🇸", countryCode: "es" },
-  { code: "de", label: "German",   nativeName: "Deutsch",  flag: "🇩🇪", countryCode: "de" },
+  { code: "en", label: "English", nativeName: "English",  flag: "🇬🇧", countryCode: "gb" },
+  { code: "fr", label: "French",  nativeName: "Français", flag: "🇫🇷", countryCode: "fr" },
+  { code: "es", label: "Spanish", nativeName: "Español",  flag: "🇪🇸", countryCode: "es" },
+  { code: "de", label: "German",  nativeName: "Deutsch",  flag: "🇩🇪", countryCode: "de" },
+  // "ar" removed
 ];
 
 // Consistent flag image component — uses flagcdn.com, works on all platforms
@@ -251,89 +251,6 @@ const T: Record<Lang, Translations> = {
     ph_what_studying: "Que etudiez-vous?", ph_ask_docs: "Posez une question sur vos documents...",
   },
 
-  ar: {
-    nav_dashboard: "لوحة التحكم", nav_pomodoro: "بومودورو",
-    nav_timetable: "الجدول الزمني", nav_progress: "التقدم",
-    nav_forest: "الغابة", nav_assistant: "المساعد",
-    nav_flashcards: "البطاقات", nav_documents: "الوثائق",
-    nav_profile: "الملف الشخصي", nav_logout: "تسجيل الخروج",
-    nav_login: "تسجيل الدخول", nav_signup: "إنشاء حساب", nav_about: "حول",
-
-    auth_welcome_back: "مرحباً بعودتك",
-    auth_subtitle_login: "سجّل دخولك إلى حساب FocusNest",
-    auth_email: "البريد الإلكتروني", auth_password: "كلمة المرور",
-    auth_forgot: "نسيت كلمة المرور؟", auth_sign_in: "تسجيل الدخول",
-    auth_signing_in: "جارٍ الدخول...", auth_no_account: "لا تملك حساباً؟",
-    auth_create_one: "أنشئ حساباً", auth_create_account: "إنشاء حساب",
-    auth_subtitle_signup: "ابدأ في بناء غابتك",
-    auth_first_name: "الاسم الأول", auth_last_name: "اسم العائلة",
-    auth_dob: "تاريخ الميلاد", auth_major: "التخصص",
-    auth_phone: "الهاتف", auth_confirm_password: "تأكيد كلمة المرور",
-    auth_creating: "جارٍ إنشاء الحساب...", auth_already_have: "لديك حساب بالفعل؟",
-    auth_reset_title: "إعادة تعيين كلمة المرور",
-    auth_reset_subtitle: "أدخل بريدك الإلكتروني وسنرسل لك رابطاً.",
-    auth_send_reset: "إرسال الرابط", auth_sending: "جارٍ الإرسال...",
-    auth_back_to_signin: "العودة لتسجيل الدخول",
-
-    page_dashboard_title: "لوحة التحكم", page_dashboard_subtitle: "مركز دراستك.",
-    page_dashboard_greeting_morning: "صباح الخير",
-    page_dashboard_greeting_afternoon: "مساء الخير",
-    page_dashboard_greeting_evening: "مساء الخير",
-    page_dashboard_today_sessions: "جلسات اليوم",
-    page_dashboard_total_sessions: "إجمالي الجلسات",
-    page_dashboard_focus_time: "وقت التركيز",
-    page_dashboard_documents: "الوثائق",
-    page_dashboard_today_schedule: "جدول اليوم",
-    page_dashboard_quick_actions: "إجراءات سريعة",
-    page_dashboard_recent_docs: "الوثائق الأخيرة",
-    page_dashboard_no_schedule: "لا شيء مجدول اليوم",
-    page_dashboard_no_docs: "لا توجد وثائق بعد",
-
-    page_forest_title: "غابتي",
-    page_forest_subtitle: "كل جلسة تركيز مكتملة تزرع شجرة.",
-    page_forest_planted: "الأشجار المزروعة", page_forest_focus_time: "وقت التركيز",
-    page_forest_streak: "السلسلة الحالية", page_forest_abandoned: "المتروكة",
-    page_forest_empty: "غابتك فارغة",
-    page_forest_empty_sub: "أكمل جلسة بومودورو لزرع أول شجرة.",
-    page_forest_total: "شجرة إجمالاً",
-
-    page_pomodoro_title: "بومودورو",
-    page_pomodoro_subtitle: "ازرع شجرة. ابقَ مركّزاً. طوّر غابتك.",
-    page_pomodoro_focus: "تركيز", page_pomodoro_break: "استراحة",
-    page_pomodoro_start: "ابدأ", page_pomodoro_pause: "إيقاف",
-    page_pomodoro_reset: "إعادة تعيين", page_pomodoro_plant: "ازرع وابدأ",
-    page_pomodoro_resume: "استأنف", page_pomodoro_session_label: "عنوان الجلسة",
-    page_pomodoro_my_forest: "غابتي",
-
-    page_documents_title: "الوثائق",
-    page_documents_subtitle: "ارفع موادك الدراسية — سيستخدمها مساعدك.",
-    page_documents_drop: "أسقط ملفاً أو انقر للتصفح",
-    page_documents_accept: "PDF أو DOCX أو TXT · الحد الأقصى 20 ميجا",
-    page_documents_no_docs: "لا توجد وثائق بعد",
-    page_documents_uploading: "جارٍ الرفع",
-
-    page_profile_personal: "المعلومات الشخصية",
-    page_profile_password: "تغيير كلمة المرور",
-    page_profile_account: "الحساب", page_profile_signout: "تسجيل الخروج",
-    page_profile_signout_msg: "سيؤدي تسجيل الخروج إلى إنهاء جلستك الحالية.",
-    page_profile_avatar: "اختر صورة",
-
-    btn_save: "حفظ التغييرات", btn_saving: "جارٍ الحفظ...", btn_cancel: "إلغاء",
-    btn_delete: "حذف", btn_upload: "رفع", btn_send: "إرسال",
-    btn_start: "ابدأ", btn_pause: "إيقاف مؤقت", btn_reset: "إعادة تعيين",
-    btn_view_all: "عرض الكل", btn_open_timetable: "فتح الجدول",
-    btn_start_session: "بدء جلسة",
-
-    guest_welcome: "مرحباً بك في FocusNest",
-    guest_description: "سجّل دخولك للوصول الكامل أو تابع كضيف مع وصول إلى بومودورو والجدول الزمني.",
-    guest_signin: "تسجيل الدخول للوصول الكامل",
-    guest_create: "إنشاء حساب",
-    guest_continue: "المتابعة كضيف",
-    logout_confirm: "هل أنت متأكد أنك تريد تسجيل الخروج؟", logout_yes: "نعم، تسجيل الخروج",
-    ph_email: "you@example.com", ph_password: "........", ph_search: "بحث...",
-    ph_what_studying: "ماذا تدرس؟", ph_ask_docs: "اسأل عن وثائقك...",
-  },
-
   es: {
     nav_dashboard: "Panel", nav_pomodoro: "Pomodoro",
     nav_timetable: "Horario", nav_progress: "Progreso",
@@ -510,13 +427,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY) as Lang | null;
-    const validLangs: Lang[] = ["en", "fr", "ar", "es", "de"];
+    const validLangs: Lang[] = ["en", "fr", "es", "de"]; // "ar" removed
     if (saved && validLangs.includes(saved)) { applyLang(saved); setLangState(saved); }
+    // If saved lang was "ar", falls back to "en" silently
   }, []);
 
   function applyLang(l: Lang) {
     document.documentElement.setAttribute("lang", l);
-    document.documentElement.setAttribute("dir", l === "ar" ? "rtl" : "ltr");
+    document.documentElement.setAttribute("dir", "ltr"); // always ltr now — no RTL languages remain
   }
 
   function setLang(l: Lang) {
