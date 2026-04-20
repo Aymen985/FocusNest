@@ -42,7 +42,7 @@ export default function LoginPage() {
       if (!loggedInUser.emailVerified) {
         blockedRef.current = true;
         await signOut(auth);
-        setError("Email not verified. Please check your inbox before signing in.");
+        setError("Email not verified. Please check your inbox (check spam if not found) before signing in.");
         setLoading(false);
         return;
       }
