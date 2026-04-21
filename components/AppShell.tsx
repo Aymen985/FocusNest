@@ -149,6 +149,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
+  useEffect(() => {
+    if (!loading && !user) router.push("/login");
+  }, [user, loading, router]);
+
   function toggleTheme() {
     const next = !isDark;
     setIsDark(next);
@@ -172,12 +176,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   // Auth pages: no shell
   const authPaths = ["/login", "/signup", "/reset-password"];
   if (authPaths.some((p) => pathname.startsWith(p))) return <>{children}</>;
-
-  // Redirect unauthenticated users to login
-  if (!loading && !user) {
-    router.push("/login");
-    return null;
-  }
 
   // Pass the effective dark value: before mount use false (SSR-safe),
   // after mount use the real value from localStorage.

@@ -14,6 +14,7 @@ export default function AssistantPage() {
   const { user } = useAuth();
   const { t } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([]);
+  const [mounted, setMounted] = useState(false);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [docContext, setDocContext] = useState(true);
@@ -24,8 +25,23 @@ export default function AssistantPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    try {
+      const stored = localStorage.getItem("focusnest_chat_history");
+      if (stored) setMessages(JSON.parse(stored));
+    } catch {}
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    try {
+      localStorage.setItem("focusnest_chat_history", JSON.stringify(messages));
+    } catch {}
+  }, [messages, mounted]);
 
   const autoResize = () => {
     const el = textareaRef.current;
@@ -181,7 +197,21 @@ export default function AssistantPage() {
             Ask anything about your uploaded documents
           </p>
         </div>
-        <label className="flex items-center gap-2 cursor-pointer select-none">
+        <div className="flex items-center gap-3">
+          {mounted && messages.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setMessages([]);
+                localStorage.removeItem("focusnest_chat_history");
+              }}
+              className="text-xs text-neutral-400 hover:text-red-400 transition-colors"
+              title="Clear chat history"
+            >
+              Clear
+            </button>
+          )}
+          <label className="flex items-center gap-2 cursor-pointer select-none">
           <span className="text-xs text-neutral-500 dark:text-neutral-400">
             Doc context
           </span>
@@ -201,6 +231,7 @@ export default function AssistantPage() {
             />
           </button>
         </label>
+        </div>
       </div>
 
       {/* Messages */}

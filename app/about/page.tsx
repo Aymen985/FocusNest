@@ -15,7 +15,7 @@ export default function AboutPage() {
               FocusNest
             </h1>
             <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
-              Study Smarter. Focus Deeper.
+              An integrated study productivity platform for focused, structured learning
             </p>
           </div>
         </div>
@@ -27,15 +27,16 @@ export default function AboutPage() {
             <span className="flex-1 h-px bg-neutral-200 dark:bg-neutral-800" />
           </h2>
           <p className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed mb-3">
-            FocusNest is an all-in-one study productivity app designed to help students stay focused,
-            organised, and on top of their academic goals. It combines a Pomodoro timer, weekly
-            timetable planner, AI-powered study assistant, flashcard generator, document manager,
-            and progress tracker — all in one place.
+            FocusNest is a web-based study platform designed to help students manage their time,
+            stay focused, and revise more effectively within a single environment. Instead of
+            relying on separate tools for timing, note-based revision, AI support, and progress
+            tracking, FocusNest brings these functions together into one connected workspace.
           </p>
           <p className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed">
-            The idea behind FocusNest is simple: studying is hard enough without having to juggle
-            five different tools. Everything you need to plan, focus, and review is here, built to
-            work together seamlessly.
+            The platform was developed to address common study problems such as procrastination,
+            fragmented workflows, loss of focus, and the interruption caused by switching between
+            multiple apps while studying. By combining productivity tools with AI-assisted support,
+            FocusNest aims to make independent study more structured, practical, and engaging.
           </p>
         </div>
 
@@ -47,21 +48,21 @@ export default function AboutPage() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
-              { icon: "⏱", title: "Pomodoro Timer",     desc: "Focus sessions with tree growth and forest collection" },
-              { icon: "📅", title: "Timetable",          desc: "Drag & drop weekly schedule with session tracking" },
-              { icon: "🤖", title: "AI Assistant",       desc: "Chat with your documents using AI" },
-              { icon: "🃏", title: "Flashcards",         desc: "AI-generated study cards from your notes" },
-              { icon: "📄", title: "Documents",          desc: "Upload and manage your study materials" },
-              { icon: "📈", title: "Progress",           desc: "Charts, streaks, and session history" },
+              { icon: "⏱", title: "Pomodoro Timer", desc: "Run focused study sessions with built-in work and break cycles, designed to support concentration and reduce distraction.", href: "/pomodoro" },
+              { icon: "📅", title: "Timetable",      desc: "Plan and organise study sessions across the week using a dedicated scheduling space.", href: "/timetable" },
+              { icon: "🤖", title: "AI Assistant",   desc: "Ask study-related questions and receive immediate support while working, without leaving the platform.", href: "/assistant" },
+              { icon: "🃏", title: "Flashcards",     desc: "Generate revision flashcards from study material to support recall and active learning.", href: "/flashcards" },
+              { icon: "📄", title: "Documents",      desc: "Upload and manage study documents for use across revision and AI-supported features.", href: "/documents" },
+              { icon: "📈", title: "Progress",       desc: "Review study activity, session history, and visual progress over time.", href: "/forest" },
             ].map((f) => (
-              <div key={f.title}
-                className="flex items-start gap-3 p-3 rounded-xl bg-white dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700">
+              <Link key={f.title} href={f.href}
+                className="flex items-start gap-3 p-3 rounded-xl bg-white dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 hover:bg-emerald-50 dark:hover:bg-emerald-500/5 transition-colors group">
                 <span className="text-xl leading-none mt-0.5">{f.icon}</span>
                 <div>
-                  <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">{f.title}</p>
+                  <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{f.title}</p>
                   <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{f.desc}</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -78,10 +79,14 @@ export default function AboutPage() {
             </div>
             <div>
               <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
-                3rd Year Computer Science Student
+                Aymen Laoufi
               </p>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                Built as a final year project — a practical tool for students, by a student.
+                Final Year Project in Computer Science at the University of Westminster.
+              </p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                FocusNest was created as a practical response to the difficulties students face when
+                trying to balance productivity, revision, and academic support in digital study environments.
               </p>
             </div>
           </div>
@@ -94,7 +99,7 @@ export default function AboutPage() {
             <span className="flex-1 h-px bg-neutral-200 dark:bg-neutral-800" />
           </h2>
           <p className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed mb-4">
-            Found a bug, have a suggestion, or just want to say hi? I'd love to hear from you.
+            If you notice a bug, have a suggestion, or would like to share feedback on the platform, please get in touch at:
           </p>
           <a
             href="mailto:aymenlfi97@gmail.com"

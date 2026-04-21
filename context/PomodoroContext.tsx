@@ -36,6 +36,56 @@ interface PomodoroContextValue {
   isActive: boolean;
 }
 
+// ── Web Audio sounds (no external files needed) ───────────────────────────
+function playSound(type: "start" | "complete") {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const gain = ctx.createGain();
+    gain.connect(ctx.destination);
+
+    if (type === "start") {
+      // Short soft chime — two rising tones
+      const freqs = [523, 659]; // C5, E5
+      freqs.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.18);
+        gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + i * 0.18 + 0.04);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + i * 0.18 + 0.3);
+        osc.start(ctx.currentTime + i * 0.18);
+        osc.stop(ctx.currentTime + i * 0.18 + 0.35);
+      });
+    } else {
+      // Two bursts of 3 short beeps — matches reference audio pattern
+      // Each beep: ~65ms on, ~62ms off. Two groups separated by ~560ms.
+      const beepOn  = 0.065;
+      const beepOff = 0.062;
+      const groupGap = 0.56;
+      const freq = 1046; // C6 — clear, soft, notification-like
+
+      for (let group = 0; group < 2; group++) {
+        const groupStart = group * (3 * (beepOn + beepOff) + groupGap);
+        for (let b = 0; b < 3; b++) {
+          const t = ctx.currentTime + groupStart + b * (beepOn + beepOff);
+          const osc = ctx.createOscillator();
+          osc.type = "sine";
+          osc.frequency.value = freq;
+          osc.connect(gain);
+          gain.gain.setValueAtTime(0, t);
+          gain.gain.linearRampToValueAtTime(0.18, t + 0.008);
+          gain.gain.setValueAtTime(0.18, t + beepOn - 0.01);
+          gain.gain.linearRampToValueAtTime(0, t + beepOn);
+          osc.start(t);
+          osc.stop(t + beepOn + 0.01);
+        }
+      }
+    }
+    setTimeout(() => ctx.close(), 2000);
+  } catch (_) {}
+}
+
 export function clampInt(v: number, min: number, max: number) {
   return Math.max(min, Math.min(max, Math.floor(isFinite(v) ? v : min)));
 }
@@ -142,6 +192,7 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
 
   async function doFocusComplete() {
     const treeType = currentTreeRef.current ?? "oak";
+    playSound("complete");
     setShowCelebration(true);
     setTimeout(() => setShowCelebration(false), 3000);
     if (user) {
@@ -180,6 +231,7 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
       if (phaseRef.current === "focus") {
         doFocusComplete();
       } else {
+        playSound("complete");
         const fm = clampInt(focusMinsRef.current, 1, 180);
         phaseRef.current = "focus";
         setPhase("focus");
@@ -198,6 +250,7 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => () => stopTick(), []);
 
   const handleStart = useCallback(() => {
+    playSound("start");
     if (phaseRef.current === "focus" && !currentTreeRef.current) {
       const t = randomTreeType();
       setCurrentTree(t);

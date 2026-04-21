@@ -348,6 +348,16 @@ function PomodoroInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  // ── Tab title ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const time = formatTime(secondsLeft);
+    const label = phase === "focus" ? "Focus" : "Break";
+    document.title = isRunning || secondsLeft > 0
+      ? `${time} · ${label} — FocusNest`
+      : "FocusNest — Pomodoro";
+    return () => { document.title = "FocusNest — Study Smarter"; };
+  }, [secondsLeft, phase, isRunning]);
+
   const ringProgress = phase === "focus" ? focusProgress
     : 1 - secondsLeft / (clampInt(breakMins, 1, 60) * 60);
   const treeToShow = currentTree ?? "oak";

@@ -16,6 +16,17 @@ function validatePassword(pw: string) {
   if (pw.length < 6) return "Password must be at least 6 characters.";
   return "";
 }
+function validateDob(dob: string): string {
+  if (!dob) return "Date of birth is required.";
+  const date = new Date(dob);
+  const year = date.getFullYear();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (isNaN(date.getTime()))      return "Invalid date of birth.";
+  if (year < 1900)                return "Date of birth must be after 1900.";
+  if (date >= today)              return "Date of birth must be in the past.";
+  return "";
+}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -62,6 +73,8 @@ export default function SignupPage() {
     setSuccess("");
 
     if (!validateEmail(email))  { setError("Invalid email format."); return; }
+    const dobErr = validateDob(dob);
+    if (dobErr) { setError(dobErr); return; }
     if (!validatePhone(phone))  { setError("Invalid phone — use: +XX XXXXXXXXX"); return; }
     if (password !== confirmPassword) { setError("Passwords do not match."); return; }
     const pwErr = validatePassword(password);
@@ -137,7 +150,7 @@ export default function SignupPage() {
             className={inputCls}
             placeholder="+44 7700 000000"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => setPhone(e.target.value.replace(/[^0-9+\-\s]/g, ""))}
             required
           />
         </Field>

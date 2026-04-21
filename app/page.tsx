@@ -277,9 +277,25 @@ function HomeAssistantCard() {
   const { user } = useAuth();
   const [input,     setInput]     = useState("");
   const [messages,  setMessages]  = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [mounted,   setMounted]   = useState(false);
   const [streaming, setStreaming] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("focusnest_chat_history");
+      if (stored) setMessages(JSON.parse(stored));
+    } catch {}
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    try {
+      localStorage.setItem("focusnest_chat_history", JSON.stringify(messages));
+    } catch {}
+  }, [messages, mounted]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

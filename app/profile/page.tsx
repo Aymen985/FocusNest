@@ -516,7 +516,7 @@ export default function ProfilePage() {
               </Field>
               <Field label="Phone">
                 <input className="fn-input" placeholder="+44 7700 000000"
-                  value={phone} onChange={(e) => setPhone(e.target.value)} />
+                  value={phone} onChange={(e) => setPhone(e.target.value.replace(/[^0-9+\-\s]/g, ""))} />
               </Field>
               <Field label="Email address">
                 <div className="fn-email-row">
