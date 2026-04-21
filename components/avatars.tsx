@@ -1,5 +1,4 @@
-// components/avatars.tsx
-// Race-neutral human avatars + fun/cartoon ones (no animals)
+// Avatar definitions
 
 export interface AvatarDef {
   id: string;
@@ -10,7 +9,7 @@ export interface AvatarDef {
 export type AvatarId = string;
 
 export const AVATARS: AvatarDef[] = [
-  // ── Human avatars — flat silhouette style ────────────────────────────────
+  // Human avatars
   {
     id: "male",
     label: "Male",
@@ -39,7 +38,7 @@ export const AVATARS: AvatarDef[] = [
 </svg>`,
   },
 
-  // ── Fun / cartoon avatars (no animals) ───────────────────────────────────
+  // Cartoon avatars
   {
     id: "robot",
     label: "Robot",

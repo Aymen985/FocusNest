@@ -197,7 +197,7 @@ export default function FlashcardsPage() {
     }
   };
 
-  // ── Delete a saved set ────────────────────────────────────────────────────
+  // ── Delete a saved set 
   async function handleDelete(id: string) {
     if (!user) return;
     setDeleting(true);

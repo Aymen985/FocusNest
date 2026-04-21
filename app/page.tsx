@@ -9,7 +9,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import LoadingScreen from "@/components/LoadingScreen";
 import Link from "next/link";
 
-// ── Greeting helper ───────────────────────────────────────────────────────────
+// Greeting helper 
 function getGreeting(t: {
   page_dashboard_greeting_morning: string;
   page_dashboard_greeting_afternoon: string;
@@ -21,7 +21,7 @@ function getGreeting(t: {
   return t.page_dashboard_greeting_evening;
 }
 
-// ── SVG Mini Trees (same design as pomodoro page) ─────────────────────────────
+//  SVG Mini Trees (same design as pomodoro page) 
 function MiniOak({ dead }: { dead?: boolean }) {
   return (
     <svg viewBox="0 0 60 72" className="w-full h-full">
@@ -113,7 +113,7 @@ function GrowingOak({ stage }: { stage: GrowthStage }) {
   );
 }
 
-// ── Mini Pomodoro card ────────────────────────────────────────────────────────
+//  Mini Pomodoro card 
 function HomePomodoroCard() {
   const {
     phase, secondsLeft, isRunning, growthStage, focusProgress,
@@ -173,7 +173,7 @@ function HomePomodoroCard() {
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-            {/* SVG growing tree — same design as pomodoro page */}
+            {/* Forest card */}
             <div className="w-10 h-10">
               {phase === "focus" ? (
                 <GrowingOak stage={growthStage} />
@@ -231,7 +231,7 @@ function HomePomodoroCard() {
   );
 }
 
-// ── Mini Forest card — uses SVG trees consistent with forest/pomodoro pages ───
+// Forest card
 function HomeForestCard() {
   const { forestTrees, loadingForest } = usePomodoroContext();
   const recent = forestTrees.slice(0, 6);
@@ -272,7 +272,7 @@ function HomeForestCard() {
   );
 }
 
-// ── Mini Assistant card ───────────────────────────────────────────────────────
+//  Mini Assistant card 
 function HomeAssistantCard() {
   const { user } = useAuth();
   const [input,     setInput]     = useState("");
@@ -461,7 +461,7 @@ function HomeAssistantCard() {
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+//  Page 
 export default function HomePage() {
   const { user, loading, userProfile } = useAuth();
   const router = useRouter();

@@ -15,7 +15,7 @@ import {
   type Phase,
 } from "@/context/PomodoroContext";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers 
 
 function formatTime(s: number) {
   const t = Math.max(0, Math.floor(s));
@@ -35,7 +35,7 @@ const TREE_COLORS: Record<TreeType, string> = {
   cactus: "text-lime-500",
 };
 
-// ─── SVG Trees ────────────────────────────────────────────────────────────────
+// ─── SVG Trees 
 
 function OakTree({ stage }: { stage: GrowthStage }) {
   const s = stage;
@@ -308,7 +308,7 @@ function ProgressRing({ progress, phase }: { progress: number; phase: Phase }) {
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Page 
 
 function PomodoroInner() {
   const { user } = useAuth();
@@ -348,7 +348,7 @@ function PomodoroInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // ── Tab title ─────────────────────────────────────────────────────────────
+  // ── Tab title 
   useEffect(() => {
     const time = formatTime(secondsLeft);
     const label = phase === "focus" ? "Focus" : "Break";
@@ -375,7 +375,7 @@ function PomodoroInner() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
 
-          {/* ── Timer card ─────────────────────────────────────────────────── */}
+          {/* ── Timer card  */}
           <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 flex flex-col items-center gap-6">
 
             <div className={`text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-widest ${
@@ -448,7 +448,7 @@ function PomodoroInner() {
             )}
           </div>
 
-          {/* ── Settings + Forest ───────────────────────────────────────────── */}
+          {/* ── Settings + Forest  */}
           <div className="space-y-4">
             <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 space-y-4">
               <h2 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">Settings</h2>

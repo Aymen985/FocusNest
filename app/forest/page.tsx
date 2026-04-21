@@ -7,7 +7,7 @@ import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
 import { usePomodoroContext, type ForestTree } from "@/context/PomodoroContext";
 import Link from "next/link";
 
-// ─── Tree SVGs ────────────────────────────────────────────────────────────────
+// ─── Tree SVGs 
 
 function MiniOak({ dead }: { dead?: boolean }) {
   return (
@@ -84,7 +84,7 @@ function TreeIcon({ treeType, dead }: { treeType: string; dead?: boolean }) {
   }
 }
 
-// ─── Island tile — fixed layout so tree never overlaps date label ─────────────
+
 
 function IslandTile({ tree, index }: { tree: ForestTree; index: number }) {
   const isDead = tree.status === "abandoned" || tree.completed === false || tree.treeType === "dead";
@@ -129,7 +129,7 @@ function IslandTile({ tree, index }: { tree: ForestTree; index: number }) {
         </div>
       </div>
 
-      {/* Date label — always below the island, never overlapped */}
+      {/* Date label */}
       <p className="text-[9px] text-neutral-500 dark:text-neutral-600 text-center leading-tight">
         {label}
       </p>
@@ -137,7 +137,7 @@ function IslandTile({ tree, index }: { tree: ForestTree; index: number }) {
   );
 }
 
-// ─── Stat pill ────────────────────────────────────────────────────────────────
+//  Stat pill 
 
 function StatPill({ icon, value, label }: { icon: React.ReactNode; value: string | number; label: string }) {
   return (
@@ -151,7 +151,7 @@ function StatPill({ icon, value, label }: { icon: React.ReactNode; value: string
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+//  Page 
 
 export default function ForestPage() {
   const { user }  = useAuth();

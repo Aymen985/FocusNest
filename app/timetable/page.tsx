@@ -9,7 +9,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-// --- Types --------------------------------------------------------------------
+//  Types 
 
 type Priority = "mandatory" | "optional";
 type Status   = "planned" | "in-progress" | "completed" | "missed";
@@ -46,7 +46,7 @@ interface ScheduledSession {
   weekKey: string;
 }
 
-// --- Constants ----------------------------------------------------------------
+//  Constants 
 
 // NOTE: every value must be unique — duplicate values cause React key errors
 const COLOR_PALETTE = [
@@ -71,7 +71,7 @@ const SNAP       = 15;
 const DAYS       = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DAY_HEIGHT = GRID_TOTAL * PX_PER_MIN;
 
-// --- Helpers ------------------------------------------------------------------
+//  Helpers 
 
 function getWeekKey(monday: Date): string {
   const y     = monday.getFullYear();
@@ -135,7 +135,7 @@ const blankForm = () => ({
   color: COLOR_PALETTE[0].value, description: "",
 });
 
-// --- Shared form component ----------------------------------------------------
+// Shared form component 
 
 function SessionForm({
   value, onChange, onSubmit, onCancel, submitLabel, saving, error,
@@ -222,7 +222,7 @@ function SessionForm({
   );
 }
 
-// --- Main Page ----------------------------------------------------------------
+//  Main Page 
 
 export default function TimetablePage() {
   const { user, loading: authLoading } = useAuth();
@@ -267,12 +267,12 @@ export default function TimetablePage() {
   const resizeRef = useRef<{ sessionId: string; originalDuration: number; startY: number } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // -- Auth guard --------------------------------------------------------------
+  //  Auth guard 
   useEffect(() => {
     if (!authLoading && !user) router.push("/login");
   }, [user, authLoading, router]);
 
-  // -- Load data ---------------------------------------------------------------
+  //  Load data 
   useEffect(() => {
     if (!user) return;
     async function load() {
@@ -313,7 +313,7 @@ export default function TimetablePage() {
     load();
   }, [user, weekKey, weekOffset]);
 
-  // -- CRUD --------------------------------------------------------------------
+  //  CRUD 
 
   async function handleCreateTemplate() {
     if (!sidebarForm.title.trim()) { setSidebarError("Title is required."); return; }
@@ -411,7 +411,7 @@ export default function TimetablePage() {
     } finally { setScheduledEditSaving(false); }
   }
 
-  // -- Resize ------------------------------------------------------------------
+  //  Resize 
   const handleResizeStart = useCallback((e: React.MouseEvent, sessionId: string, originalDuration: number) => {
     e.preventDefault(); e.stopPropagation();
     resizeRef.current = { sessionId, originalDuration, startY: e.clientY };
@@ -435,7 +435,7 @@ export default function TimetablePage() {
     return () => { window.removeEventListener("mousemove", onMouseMove); window.removeEventListener("mouseup", onMouseUp); };
   }, [scheduled, user]);
 
-  // -- Week helpers ------------------------------------------------------------
+  //  Week helpers 
   function getDayDate(i: number): Date {
     const d = new Date(monday); d.setDate(monday.getDate() + i); return d;
   }
@@ -456,13 +456,13 @@ export default function TimetablePage() {
     );
   }
 
-  // --- Render -------------------------------------------------------------------
+  //  Render 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-hidden flex flex-col"
         style={{ height: "calc(100vh - 120px)" }}>
 
-        {/* -- Top bar -------------------------------------------------------- */}
+        {/* -- Top bar  */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-100 dark:border-neutral-800 shrink-0">
           <div className="flex items-center gap-2">
             <button onClick={() => setWeekOffset((o) => o - 1)}
@@ -493,10 +493,10 @@ export default function TimetablePage() {
           </div>
         </div>
 
-        {/* -- Body ----------------------------------------------------------- */}
+        {/* -- Body  */}
         <div className="flex flex-1 overflow-hidden">
 
-          {/* -- Left sidebar ------------------------------------------------- */}
+          {/* -- Left sidebar  */}
           <div className="w-52 shrink-0 border-r border-neutral-100 dark:border-neutral-800 flex flex-col bg-neutral-50 dark:bg-neutral-950">
             <div className="p-3 space-y-1.5 border-b border-neutral-100 dark:border-neutral-800 shrink-0">
               <button
@@ -627,7 +627,7 @@ export default function TimetablePage() {
             </div>
           </div>
 
-          {/* -- Calendar grid ------------------------------------------------ */}
+          {/* -- Calendar grid */}
           <div className="flex-1 overflow-hidden flex flex-col">
             {/* Day headers */}
             <div className="flex shrink-0 border-b border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900">
@@ -775,7 +775,7 @@ export default function TimetablePage() {
           </div>
         </div>
 
-        {/* -- Session Detail / Edit Popup ---------------------------------------- */}
+        {/* -- Session Detail / Edit Popup  */}
         {selected && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
             onClick={() => { setSelected(null); setEditingScheduled(false); }}>

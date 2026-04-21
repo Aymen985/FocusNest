@@ -120,14 +120,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [mobileOpen,        setMobileOpen]        = useState(false);
 
-  // ── Dark mode ──────────────────────────────────────────────────────────────
-  // Start as false (matches server render — server has no localStorage).
-  // After mount, read localStorage and sync. The inline script in layout.tsx
-  // already applied the correct class to <html> before first paint, so there
-  // is no visual flash. The only thing that was flashing before was React's
-  // state being out of sync, causing a re-render — this fixes that by making
-  // server and client agree on the initial value (false), then correcting
-  // silently after hydration with suppressHydrationWarning on <html>.
+// Keep theme state in sync after hydration.
   const [isDark,   setIsDark]   = useState(false);
   const [mounted,  setMounted]  = useState(false);
 

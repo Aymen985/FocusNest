@@ -15,7 +15,7 @@ import LoadingScreen from "@/components/LoadingScreen";
 import { AVATARS, getAvatar, type AvatarId } from "@/components/avatars";
 import { doc, updateDoc, deleteDoc } from "firebase/firestore";
 
-/* --- helpers ------------------------------------------------ */
+/* --- helpers  */
 function initials(first: string, last: string) {
   return `${first?.[0] ?? ""}${last?.[0] ?? ""}`.toUpperCase() || "?";
 }
@@ -105,7 +105,7 @@ function StatusMsg({ msg }: { msg: string }) {
   );
 }
 
-/* --- main page ---------------------------------------------- */
+/* --- main page  */
 export default function ProfilePage() {
   const { user, userProfile, logout, loading } = useAuth();
   const router = useRouter();
@@ -132,7 +132,7 @@ export default function ProfilePage() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [mounted,           setMounted]           = useState(false);
 
-  // ── Delete account state ──────────────────────────────────────────────────
+  // ── Delete account state 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletePassword,    setDeletePassword]    = useState("");
   const [showDeletePw,      setShowDeletePw]      = useState(false);
@@ -221,7 +221,7 @@ export default function ProfilePage() {
     router.push("/login");
   }
 
-  // ── Delete account ────────────────────────────────────────────────────────
+  // ── Delete account 
   async function handleDeleteAccount() {
     if (!user || !user.email) return;
     setDeleting(true);

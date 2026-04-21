@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -23,7 +23,7 @@ import {
   Line,
 } from "recharts";
 
-// --- Types --------------------------------------------------------------------
+// --- Types 
 
 interface PomodoroSession {
   id: string;
@@ -38,7 +38,7 @@ interface DayStat {
   minutes: number;
 }
 
-// --- Dark-mode hook -----------------------------------------------------------
+// --- Dark-mode hook 
 
 function useDarkMode(): boolean {
   const [dark, setDark] = useState(false);
@@ -54,7 +54,7 @@ function useDarkMode(): boolean {
   return dark;
 }
 
-// --- Chart colour tokens ------------------------------------------------------
+// --- Chart colour tokens 
 
 function chartTokens(dark: boolean) {
   return {
@@ -66,7 +66,7 @@ function chartTokens(dark: boolean) {
   };
 }
 
-// --- Stat helpers -------------------------------------------------------------
+// --- Stat helpers 
 
 function getStreakInfo(sessions: PomodoroSession[]): { current: number; longest: number } {
   if (!sessions.length) return { current: 0, longest: 0 };
@@ -143,7 +143,7 @@ function tooltipStyle(dark: boolean) {
   };
 }
 
-// --- Page ---------------------------------------------------------------------
+// --- Page 
 
 export default function ProgressPage() {
   const { user }  = useAuth();
@@ -188,7 +188,7 @@ export default function ProgressPage() {
     { label: "Avg sessions / day", value: avgDaily },
   ];
 
-  // Shared axis props � defined once, reused in both charts
+  
   const xAxisProps = {
     dataKey: "date" as const,
     tick: { fontSize: 11, fill: t.tick },

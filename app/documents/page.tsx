@@ -6,7 +6,7 @@ import {
   collection, getDocs, doc, deleteDoc, query, orderBy,
 } from "firebase/firestore";
 
-// --- Types --------------------------------------------------------------------
+// --- Types 
 
 type Doc = {
   id: string;
@@ -21,7 +21,7 @@ type UploadState =
   | { status: "success"; name: string }
   | { status: "error"; message: string };
 
-// --- Helpers ------------------------------------------------------------------
+// --- Helpers 
 
 const ACCEPTED = [
   "application/pdf",
@@ -50,7 +50,7 @@ function formatSize(chunks: number) {
   return kb > 999 ? `${(kb / 1000).toFixed(1)} MB` : `${kb} KB`;
 }
 
-// --- Upload area --------------------------------------------------------------
+// --- Upload area 
 
 function UploadZone({
   onUpload,
@@ -145,7 +145,7 @@ function UploadZone({
   );
 }
 
-// --- Document row -------------------------------------------------------------
+// --- Document row 
 
 function DocRow({
   doc: d,
@@ -187,7 +187,7 @@ function DocRow({
   );
 }
 
-// --- Page ---------------------------------------------------------------------
+// --- Page 
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Doc[]>([]);

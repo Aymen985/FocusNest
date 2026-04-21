@@ -4,16 +4,16 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 
 export type Lang = "en" | "fr" | "es" | "de"; // "ar" removed
 
-// Flag images via flagcdn.com — renders identically on all OS/browsers
+
 export const LANGUAGES: { code: Lang; label: string; nativeName: string; flag: string; countryCode: string }[] = [
   { code: "en", label: "English", nativeName: "English",  flag: "🇬🇧", countryCode: "gb" },
   { code: "fr", label: "French",  nativeName: "Français", flag: "🇫🇷", countryCode: "fr" },
   { code: "es", label: "Spanish", nativeName: "Español",  flag: "🇪🇸", countryCode: "es" },
   { code: "de", label: "German",  nativeName: "Deutsch",  flag: "🇩🇪", countryCode: "de" },
-  // "ar" removed
+  // "ar" caused so many issues, better to remove
 ];
 
-// Consistent flag image component — uses flagcdn.com, works on all platforms
+
 export function FlagImg({ countryCode, className = "w-5 h-3.5" }: { countryCode: string; className?: string }) {
   return (
     <img

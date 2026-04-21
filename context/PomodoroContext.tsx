@@ -36,7 +36,9 @@ interface PomodoroContextValue {
   isActive: boolean;
 }
 
-// ── Web Audio sounds (no external files needed) ───────────────────────────
+// Timer sounds
+// Start sound
+// Completion sound
 function playSound(type: "start" | "complete") {
   try {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -44,7 +46,7 @@ function playSound(type: "start" | "complete") {
     gain.connect(ctx.destination);
 
     if (type === "start") {
-      // Short soft chime — two rising tones
+      
       const freqs = [523, 659]; // C5, E5
       freqs.forEach((freq, i) => {
         const osc = ctx.createOscillator();
@@ -58,8 +60,7 @@ function playSound(type: "start" | "complete") {
         osc.stop(ctx.currentTime + i * 0.18 + 0.35);
       });
     } else {
-      // Two bursts of 3 short beeps — matches reference audio pattern
-      // Each beep: ~65ms on, ~62ms off. Two groups separated by ~560ms.
+      
       const beepOn  = 0.065;
       const beepOff = 0.062;
       const groupGap = 0.56;
@@ -116,8 +117,8 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
   const [loadingForest, setLoadingForest] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
 
-  // ── Load forest trees from Firestore on mount / when user changes ─────────
-  // This ensures trees are always shown after a page refresh.
+  //  Load forest trees from Firestore on mount / when user changes 
+  // Load forest data 
   const didLoad = useRef(false);
   useEffect(() => {
     if (!user || didLoad.current) return;
@@ -139,7 +140,7 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setLoadingForest(false));
   }, [user]);
 
-  // Timestamp-based timer refs — survive component unmount/remount on navigation
+  // Timer refs
   const startedAtRef    = useRef<number | null>(null);
   const baseSecsRef     = useRef<number>(25 * 60);
   const baseElapsedRef  = useRef<number>(0);
