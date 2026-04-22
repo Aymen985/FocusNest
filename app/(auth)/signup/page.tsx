@@ -46,19 +46,19 @@ export default function SignupPage() {
   const { signup, user, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  const [firstName, setFirstName]           = useState("");
-  const [lastName, setLastName]             = useState("");
-  const [dob, setDob]                       = useState("");
-  const [major, setMajor]                   = useState("");
-  const [phone, setPhone]                   = useState("");
-  const [email, setEmail]                   = useState("");
-  const [password, setPassword]             = useState("");
+  const [firstName, setFirstName]             = useState("");
+  const [lastName, setLastName]               = useState("");
+  const [dob, setDob]                         = useState("");
+  const [major, setMajor]                     = useState("");
+  const [phone, setPhone]                     = useState("");
+  const [email, setEmail]                     = useState("");
+  const [password, setPassword]               = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPw, setShowPw]                 = useState(false);
-  const [showConfirm, setShowConfirm]       = useState(false);
-  const [loading, setLoading]               = useState(false);
-  const [error, setError]                   = useState("");
-  const [success, setSuccess]               = useState("");
+  const [showPw, setShowPw]                   = useState(false);
+  const [showConfirm, setShowConfirm]         = useState(false);
+  const [loading, setLoading]                 = useState(false);
+  const [error, setError]                     = useState("");
+  const [success, setSuccess]                 = useState("");
 
   useEffect(() => {
     if (!authLoading && user) router.push("/");
@@ -72,10 +72,11 @@ export default function SignupPage() {
     setError("");
     setSuccess("");
 
-    if (!validateEmail(email))  { setError("Invalid email format."); return; }
+    if (!validateEmail(email)) { setError("Invalid email format."); return; }
     const dobErr = validateDob(dob);
     if (dobErr) { setError(dobErr); return; }
-    if (!validatePhone(phone))  { setError("Invalid phone — use: +XX XXXXXXXXX"); return; }
+    // Phone is optional — only validate format if the user typed something
+    if (phone && !validatePhone(phone)) { setError("Invalid phone — use: +XX XXXXXXXXX"); return; }
     if (password !== confirmPassword) { setError("Passwords do not match."); return; }
     const pwErr = validatePassword(password);
     if (pwErr) { setError(pwErr); return; }
@@ -135,23 +136,21 @@ export default function SignupPage() {
           />
         </Field>
 
-        <Field label="Major / Subject">
+        <Field label="Major / Subject (optional)">
           <input
             className={inputCls}
             placeholder="e.g. Computer Science"
             value={major}
             onChange={(e) => setMajor(e.target.value)}
-            required
           />
         </Field>
 
-        <Field label="Phone">
+        <Field label="Phone (optional)">
           <input
             className={inputCls}
             placeholder="+44 7700 000000"
             value={phone}
             onChange={(e) => setPhone(e.target.value.replace(/[^0-9+\-\s]/g, ""))}
-            required
           />
         </Field>
 
