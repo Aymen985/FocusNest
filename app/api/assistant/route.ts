@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     // Strip "File attached" UI notification messages before sending to OpenAI —
     // these are cosmetic only and confuse the model about its own capabilities.
     const cleanHistory = (
-      history as { role: string; content: string }[]
+      history as { role: "user" | "assistant" | "system"; content: string }[]
     ).filter(
       (m) =>
         !(m.role === "assistant" && m.content.startsWith("File attached:"))
