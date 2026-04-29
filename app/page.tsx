@@ -314,6 +314,22 @@ function HomeAssistantCard() {
     try {
       const { auth } = await import("@/lib/firebase");
       const token = await auth.currentUser?.getIdToken();
+
+      // Upload attached file before sending message
+      if (attachedFile) {
+        try {
+          const formData = new FormData();
+          formData.append("file", attachedFile);
+          await fetch("/api/upload", {
+            method: "POST",
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            body: formData,
+          });
+        } catch (err) {
+          console.error("Upload failed:", err);
+        }
+      }
+
       const res = await fetch("/api/assistant", {
         method: "POST",
         headers: {

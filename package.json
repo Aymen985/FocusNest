@@ -11,13 +11,14 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.88.0",
     "@opentelemetry/api": "^1.9.1",
+    "@types/pdf-parse": "^1.1.5",
     "firebase": "^12.12.0",
     "firebase-admin": "^13.8.0",
     "mammoth": "^1.12.0",
     "next": "16.1.6",
     "openai": "^6.19.0",
     "pdf-parse": "^2.4.5",
-    "pdf2json": "^4.0.2",
+    "pdf2json": "^4.0.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "recharts": "^3.8.1"
@@ -25,7 +26,6 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
-    "@types/pdf-parse": "^1.1.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

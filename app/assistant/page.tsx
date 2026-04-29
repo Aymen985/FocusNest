@@ -8,6 +8,7 @@ import { useLanguage } from "@/context/LanguageContext";
 interface Message {
   role: "user" | "assistant";
   content: string;
+  ephemeral?: boolean; // UI-only messages, never persisted or sent to API
 }
 
 export default function AssistantPage() {
@@ -27,7 +28,11 @@ export default function AssistantPage() {
   useEffect(() => {
     try {
       const stored = localStorage.getItem("focusnest_chat_history");
-      if (stored) setMessages(JSON.parse(stored));
+      if (stored) {
+        const parsed: Message[] = JSON.parse(stored);
+        const clean = parsed.filter((m) => !(m.role === "assistant" && m.content.startsWith("File attached:")));
+        setMessages(clean);
+      }
     } catch {}
     setMounted(true);
   }, []);
@@ -39,7 +44,7 @@ export default function AssistantPage() {
   useEffect(() => {
     if (!mounted) return;
     try {
-      localStorage.setItem("focusnest_chat_history", JSON.stringify(messages));
+      localStorage.setItem("focusnest_chat_history", JSON.stringify(messages.filter((m) => !m.ephemeral)));
     } catch {}
   }, [messages, mounted]);
 
@@ -60,6 +65,7 @@ export default function AssistantPage() {
       {
         role: "assistant",
         content: `File attached: **${file.name}** (${(file.size / 1024).toFixed(1)} KB). I'll use this as context for your questions.`,
+        ephemeral: true,
       },
     ]);
     // Reset input so same file can be re-selected
@@ -92,7 +98,7 @@ export default function AssistantPage() {
         try {
           const formData = new FormData();
           formData.append("file", uploadedFile);
-          const upRes = await fetch("/api/documents/upload", {
+          const upRes = await fetch("/api/upload", {
             method: "POST",
             headers: token ? { Authorization: `Bearer ${token}` } : {},
             body: formData,
@@ -117,7 +123,7 @@ export default function AssistantPage() {
         body: JSON.stringify({
           message: text,
           useDocContext: docContext,
-          history: messages.map((m) => ({ role: m.role, content: m.content })),
+          history: messages.filter((m) => !m.ephemeral).map((m) => ({ role: m.role, content: m.content })),
           ...(docId ? { docId } : {}),
         }),
       });
